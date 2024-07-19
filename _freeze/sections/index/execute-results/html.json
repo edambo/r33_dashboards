@@ -1,0 +1,15 @@
+{
+  "hash": "16d6ad55db778ddda78cdde3afd5ca86",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Clinician Follow-Up Interview Completion Tracker \"\nformat: dashboard\nscrolling: true \n---\n\n\nDETECT Dashboards...\n\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

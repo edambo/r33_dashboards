@@ -1,0 +1,20 @@
+---
+title: "Clinician Follow-Up Interview Completion Tracker "
+format: dashboard
+scrolling: true 
+---
+
+DETECT Dashboards...
+
+
+```{r, include = FALSE}
+# Libraries
+library(png) # read png image
+library(RCurl) # read png files
+library(plotly)
+library(htmlwidgets) # to use the 'onRender' function
+library(here)
+library(dplyr)
+library(ggplot2)
+
+```

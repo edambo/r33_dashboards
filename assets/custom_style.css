@@ -1,0 +1,41 @@
+
+$navbar-bg: #f3f3f3;
+$navbar-fg: #495057;
+
+/*-- scss:rules --*/
+/*Set value box themes*/
+.bg-vb-red {
+  color: #ffffff;
+  background-color: #ff625e;
+  border-color: #ffffff;
+}
+
+.bg-vb-blue {
+  color: #ffffff;
+  background-color: #003f5c;
+  border-color: #ffffff;
+}
+
+.bg-vb-green {
+  color: #ffffff;
+  background-color: #70bfb3;
+  border-color: #ffffff;
+}
+
+.bg-vb-yellow {
+  color: #ffffff;
+  background-color: #ffb700;
+  border-color: #ffffff;
+}
+
+.card-header {
+  background-color: #ffffff;
+}
+
+/* Set sidebar color */
+aside#bslib-sidebar-1.sidebar.html-fill-container.html-fill-item {
+  background-color: #f3f3f3;
+}
+
+
+

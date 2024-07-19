@@ -1,0 +1,1358 @@
+---
+title: "Clinician Screening Completion Tracker"
+format: dashboard
+scrolling: true 
+---
+
+<!-- ## Background and Purpose  -->
+<!-- - We don’t have access to the EPIC EMR.  -->
+<!-- - Providers will likely not be compliant with completing the research survey since it involves an extra step of doing this on REDcap, a system not integrated with their EMR.  -->
+<!-- - We need a system to check compliance so that we can take appropriate actions in a timely manner.  -->
+<!-- - We will run a dashboard report intermittently summarizing data measuring compliance pulled from REDcap.  -->
+<!-- - The purpose of the code in this file is to create such a  report. -->
+
+```{r, include = FALSE}
+# Libraries
+library(plotly)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(flextable)
+library(officer)
+library(forcats, include.only = c("fct_reorder"))
+```
+
+```{r, include = FALSE}
+# Load data
+data_path <- here::here("data", "mock_data.rds")
+data <- readRDS(data_path)
+
+# Load functions
+source(here::here("r", "color_alert.R"))
+source(here::here("r", "format_table.R"))
+source(here::here("r", "time_series.R"))
+```
+
+#  {.sidebar}
+
+<!-- Create Sidebar -->
+
+```{r, echo=FALSE}
+head_1 <- "This dashboard displays statistics for:\n\n"
+
+data.frame(
+  names = c("File Name", "Last Modified"),
+  values = c(basename(data_path), format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.3), unit = "in") %>%
+  add_header_lines(head_1) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+
+  
+colors <- c("#175dac", "#f1895a", "#f3f3f3", "#95b2d3", "#f4c1ab", "#7c9ccc", "#6e6b84", "#bfcfe0", "#f3d6cb", "#b4c4dc")
+```
+
+```{r, echo=FALSE}
+subjects <- data %>% select(mrn) %>% unique() %>% nrow()
+clinicians <- data %>% select(name_full_phys) %>% unique() %>% nrow()
+appointments <- data %>% nrow()
+time_period <- paste(min(as.Date(data$visit_date)), "to", max(as.Date(data$visit_date)))
+
+head_2 <- "This data references:\n\n"
+
+data.frame(
+  names = c("Subjects", "Clinicians", "Appointments", "Time Period"),
+  values = c(subjects, clinicians, appointments, time_period)
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.2), unit = "in") %>%
+  add_header_lines(head_2) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+# All
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Filter this weeks data based on system time
+today <- as.Date(Sys.time())
+
+week <- data %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(week$screened)/sum(week$eligible))*100
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+# Average proportion of items answered this week
+items_answered_week <- mean(week$perc_completed)
+  
+# Create value box 
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(data$perc_completed)
+
+# Create value box 
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(data$screened)/sum(data$eligible))*100 
+
+# Create value box 
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+## Row
+
+### Column {height = "35%"}
+
+<!-- Overall counts data -->
+
+```{r, include=FALSE}
+overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(data["eligible"]), 
+            sum(data["screened"]), 
+            format(round(mean(data$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+<!-- This week's counts data -->
+
+```{r, include=FALSE}
+week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(week["eligible"]), 
+            sum(week["screened"]), 
+            format(round(mean(week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+#### Row
+
+<!-- Create this week's counts table -->
+
+```{r, echo=FALSE}
+table_format(week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+<!-- Create overall counts table -->
+
+```{r}
+table_format(overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Clinic: %{text}",
+  "<br>% of eligible patient appointments with screenings: %{y}%", 
+  "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+data %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, clinic_name, perc_screened_month_clinic)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_clinic", "clinic_name", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}",
+ " <br>% of survey items completed: %{y}%",
+ "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+data %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, clinic_name, perc_items_month_clinic)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_clinic", "clinic_name", ht_text, y_title)
+```
+
+# Baylor
+
+```{r}
+baylor <- data %>% filter(clinic_name == "Baylor")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Filter this week's data based on system date
+today <- as.Date(Sys.time())
+
+baylor_week <- baylor %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+# Proportion of eligible screened
+perc_screened_week <- (sum(baylor_week$screened)/sum(baylor_week$eligible))*100
+  
+# Create value box
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+# Average proportion of items answered
+items_answered_week <- mean(baylor_week$perc_completed)
+  
+# Create value box
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(baylor$perc_completed)
+
+# Create value box
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(baylor$screened)/sum(baylor$eligible))*100 
+
+# Create value box
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+## Row
+
+<!-- Overall counts data -->
+
+```{r, include=FALSE}
+baylor_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(baylor["eligible"]), sum(baylor["screened"]), 
+            format(round(mean(baylor$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+<!-- This week's counts data -->
+
+```{r, include=FALSE}
+baylor_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", 
+           "Screenings", "Average Number of Items Answered"),
+  value = c(sum(baylor_week["eligible"]), sum(baylor_week["screened"]), 
+            format(round(
+              mean(baylor_week$num_completed), 
+              digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+<!-- Create this week's counts table -->
+
+```{r, echo=FALSE}
+table_format(baylor_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+<!-- Create overall counts table -->
+
+```{r}
+table_format(baylor_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+baylor %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+baylor %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+# Johns Hopkins
+
+```{r}
+jhop <- data %>% filter(clinic_name == "Johns Hopkins")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Select relevant columns and filter for unique rows
+today <- as.Date(Sys.time())
+
+# Filter this week's data based on system time
+jhop_week <- jhop %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+# Proportion of eligible screened
+perc_screened_week <- (sum(jhop_week$screened)/sum(jhop_week$eligible))*100
+  
+# Create value box
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+# Average proportion of items answered this week
+items_answered_week <- mean(jhop_week$perc_completed)
+  
+# Create value box
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(jhop$perc_completed)
+
+# Create value box
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+<!-- ## Percent screened Overall-->
+
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(jhop$screened)/sum(jhop$eligible))*100 
+
+# Create value box
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+## Row
+
+<!-- Overall counts data -->
+
+```{r, include=FALSE}
+jhop_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(jhop["eligible"]), sum(jhop["screened"]), 
+            format(round(mean(jhop$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+<!-- This week's counts data -->
+
+```{r, include=FALSE}
+jhop_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(jhop_week["eligible"]), sum(jhop_week["screened"]), 
+            format(round(mean(jhop_week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+<!-- Create this week's counts table -->
+
+```{r, echo=FALSE}
+table_format(jhop_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+<!-- Create overall counts table -->
+
+```{r}
+table_format(jhop_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+jhop %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+jhop %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+# LBJ
+
+```{r}
+lbj <- data %>% filter(clinic_name == "LBJ")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Proportion of eligible screened
+today <- as.Date(Sys.time())
+
+lbj_week <- lbj %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(lbj_week$screened)/sum(lbj_week$eligible))*100
+  
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+items_answered_week <- mean(lbj_week$perc_completed)
+  
+
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+<!-- ## Items Answered Overall-->
+
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(lbj$perc_completed)
+
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+<!-- ## Percent screened Overall-->
+
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(lbj$screened)/sum(lbj$eligible))*100 
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+## Row
+
+```{r, include=FALSE}
+lbj_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(lbj["eligible"]), sum(lbj["screened"]), format(round(mean(lbj$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+```{r, include=FALSE}
+lbj_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(lbj_week["eligible"]), sum(lbj_week["screened"]), format(round(mean(lbj_week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+```{r, echo=FALSE}
+table_format(lbj_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+```{r}
+table_format(lbj_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+lbj %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+lbj %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+# UAB
+
+```{r}
+uab <- data %>% filter(clinic_name == "UAB")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Proportion of eligible screened
+today <- as.Date(Sys.time())
+
+uab_week <- uab %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(uab_week$screened)/sum(uab_week$eligible))*100
+
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+items_answered_week <- mean(uab_week$perc_completed)
+
+
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+<!-- ## Items Answered Overall-->
+  
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(uab$perc_completed)
+
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+<!-- ## Percent screened Overall-->
+  
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(uab$screened)/sum(uab$eligible))*100 
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+## Row
+
+```{r, include=FALSE}
+uab_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(uab["eligible"]), sum(uab["screened"]), format(round(mean(uab$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+```{r, include=FALSE}
+uab_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(uab_week["eligible"]), sum(uab_week["screened"]), format(round(mean(uab_week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+```{r, echo=FALSE}
+table_format(uab_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+```{r}
+table_format(uab_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+uab %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+uab %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+# UCSF
+
+```{r}
+ucsf <- data %>% filter(clinic_name == "UCSF")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Proportion of eligible screened
+today <- as.Date(Sys.time())
+
+ucsf_week <- ucsf %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(ucsf_week$screened)/sum(ucsf_week$eligible))*100
+
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+items_answered_week <- mean(ucsf_week$perc_completed)
+
+
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+<!-- ## Items Answered Overall-->
+  
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(ucsf$perc_completed)
+
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+<!-- ## Percent screened Overall-->
+  
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(ucsf$screened)/sum(ucsf$eligible))*100 
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+## Row
+
+```{r, include=FALSE}
+ucsf_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(ucsf["eligible"]), sum(ucsf["screened"]), format(round(mean(ucsf$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+```{r, include=FALSE}
+ucsf_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(ucsf_week["eligible"]), sum(ucsf_week["screened"]), format(round(mean(ucsf_week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+```{r, echo=FALSE}
+table_format(ucsf_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+```{r}
+table_format(ucsf_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+ucsf %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+ucsf %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+# UT Physicians
+
+```{r}
+ut_phys <- data %>% filter(clinic_name == "UT Physicians")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Proportion of eligible screened
+today <- as.Date(Sys.time())
+
+ut_phys_week <- ut_phys %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(ut_phys_week$screened)/sum(ut_phys_week$eligible))*100
+
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+items_answered_week <- mean(ut_phys_week$perc_completed)
+
+
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+<!-- ## Items Answered Overall-->
+  
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(ut_phys$perc_completed)
+
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+<!-- ## Percent screened Overall-->
+  
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(ut_phys$screened)/sum(ut_phys$eligible))*100 
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+## Row
+
+```{r, include=FALSE}
+ut_phys_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(ut_phys["eligible"]), sum(ut_phys["screened"]), format(round(mean(ut_phys$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+```{r, include=FALSE}
+ut_phys_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(ut_phys_week["eligible"]), sum(ut_phys_week["screened"]), format(round(mean(ut_phys_week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+```{r, echo=FALSE}
+table_format(ut_phys_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+```{r}
+table_format(ut_phys_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+ut_phys %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+ut_phys %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+# UTSW
+
+```{r}
+utsw <- data %>% filter(clinic_name == "UTSW")
+```
+
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Proportion of eligible screened
+today <- as.Date(Sys.time())
+
+utsw_week <- utsw %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(utsw_week$screened)/sum(utsw_week$eligible))*100
+
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+items_answered_week <- mean(utsw_week$perc_completed)
+
+
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+  )
+)
+```
+<!-- ## Items Answered Overall-->
+  
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(utsw$perc_completed)
+
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+<!-- ## Percent screened Overall-->
+  
+```{r}
+#| echo: false
+#| title: Eligible Screened Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(utsw$screened)/sum(utsw$eligible))*100 
+
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+  )
+)
+```
+
+## Row
+
+```{r, include=FALSE}
+utsw_overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(utsw["eligible"]), sum(utsw["screened"]), format(round(mean(utsw$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+```{r, include=FALSE}
+utsw_week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", "Average Number of Items Answered"),
+  value = c(sum(utsw_week["eligible"]), sum(utsw_week["screened"]), format(round(mean(utsw_week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+### Column {height = "35%"}
+
+#### Row
+
+```{r, echo=FALSE}
+table_format(utsw_week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+```{r}
+table_format(utsw_overall_stats, "\nOverall\n\n")
+```
+
+
+### Column {.tabset}
+
+```{r, echo=FALSE}
+#| title: Proportion Screened
+ht_text <- paste("<br>Physician: %{text}",
+          "<br>% of eligible patient appointments with screenings: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Eligible Patient Appointments with Screenings"
+
+
+# Select relevant columns and filter for unique rows
+utsw %>% 
+  select(c(visit_date, month_year, name_full_phys, perc_screened_month_phys))%>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_screened_month_phys", "name_full_phys", ht_text, y_title)
+```
+
+
+```{r, echo=FALSE}
+#| title: Proportion of Items Completed
+ht_text <- paste("<br>Clinic: %{text}", 
+          "<br>% of survey items completed: %{y}%", 
+          "<br>Month: %{x} <extra></extra>")
+
+y_title <- "Percentage of Survey Items Completed"
+
+
+# Select relevant columns and filter for unique rows
+utsw %>% 
+  # Select relevant columns and filter for unique rows
+  select(c(visit_date, month_year, name_full_phys, perc_items_month_phys)) %>% 
+  unique() %>%
+
+# Plot data
+time_series(.,"perc_items_month_phys", "name_full_phys", ht_text, y_title)
+```

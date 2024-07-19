@@ -1,0 +1,17 @@
+{
+  "hash": "3e0c67fcdf76620f9dbb41df52aeb9a2",
+  "result": {
+    "engine": "knitr",
+    "markdown": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "supporting": [
+      "mock_data_creation_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
