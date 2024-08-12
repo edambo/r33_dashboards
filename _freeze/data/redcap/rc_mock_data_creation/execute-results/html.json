@@ -1,0 +1,17 @@
+{
+  "hash": "bd4f74df793e970188213f81f2bdc871",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\nexecute:\n  include: false\n---\n\n\n\n\n\n\n\n\n\n\n<!-- Create dyad ID from combination of clinic identifier  -->\n\n<!-- 1, Baylor College of Medicine - BT House Calls -->\n<!-- 2, Johns Hopkins - JHOME -->\n<!-- 3, UCSF - Care at Home Program -->\n<!-- 4, University of Alabama - UAB House Calls -->\n<!-- 5, UT Southwestern - COVE -->\n<!-- 6, UTH Houston - LBJ House Calls -->\n<!-- 7, UTH Houston - UT Physicians House Calls -->\n\n<!-- And assigned number for each dyad -->\n\n\n\n\n\n\n\n\n\n\n",
+    "supporting": [
+      "rc_mock_data_creation_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -8,11 +8,12 @@ website:
     logo: graphics/detect_logo.png
     left:
       - text: "Home"
-        href: sections/index.qmd
+        href: index.qmd
       - text: "About"
         href: sections/about.qmd
       - text: "Dashboards"
-        menu: 
+        menu:
+          - sections/recruitment_and_scheduling_tracker.qmd
           - sections/clinician_screening_completion_tracker.qmd
 
 

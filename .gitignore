@@ -4,6 +4,6 @@
 .Ruserdata
 
 /.quarto/
-data/
+/*data/*/
 
 .DS_Store

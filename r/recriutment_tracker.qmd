@@ -1,0 +1,198 @@
+---
+title: "Recruitment Tracker"
+format: dashboard
+scrolling: true 
+---
+
+```{r, include = FALSE}
+# Libraries
+library(plotly)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(flextable)
+library(officer)
+library(forcats, include.only = c("fct_reorder"))
+```
+
+```{r, include = FALSE}
+# Load data
+data_path <- here::here("data", "mock_data.rds")
+data <- readRDS(data_path)
+
+# Load functions
+source(here::here("r", "color_alert.R"))
+source(here::here("r", "format_table.R"))
+```
+
+#  {.sidebar}
+
+<!-- Create Sidebar -->
+
+```{r, echo=FALSE}
+head_1 <- "This dashboard displays statistics for:\n\n"
+
+data.frame(
+  names = c("File Name", "Last Modified"),
+  values = c(basename(data_path), format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.3), unit = "in") %>%
+  add_header_lines(head_1) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+```{r, echo=FALSE}
+subjects <- data %>% select(mrn) %>% unique() %>% nrow()
+clinicians <- data %>% select(name_full_phys) %>% unique() %>% nrow()
+appointments <- data %>% nrow()
+time_period <- paste(min(as.Date(data$visit_date)), "to", max(as.Date(data$visit_date)))
+
+head_2 <- "This data references:\n\n"
+
+data.frame(
+  names = c("Subjects", "Clinicians", "Appointments", "Time Period"),
+  values = c(subjects, clinicians, appointments, time_period)
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.2), unit = "in") %>%
+  add_header_lines(head_2) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+# All
+
+## Row {height ="25%" .fill}
+
+```{r}
+#| echo: false
+#| title: Eligible Screened this Week
+#| content: valuebox
+
+# Filter this weeks data based on system time
+today <- as.Date(Sys.time())
+
+week <- data %>% 
+  filter(as.Date(visit_date) %in% seq(today - 6, today, "day"))
+
+perc_screened_week <- (sum(week$screened)/sum(week$eligible))*100
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened_week, 100),
+  value = paste0(format(round(perc_screened_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered this Week 
+#| content: valuebox
+
+# Average proportion of items answered this week
+items_answered_week <- mean(week$perc_completed)
+  
+# Create value box 
+list(
+  icon = "card-checklist",
+  color = color_code(items_answered_week, 100),
+  value = paste0(format(round(items_answered_week, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Items Answered Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_completed <- mean(data$perc_completed)
+
+# Create value box 
+list(
+  icon = "card-checklist",
+  color = color_code(perc_completed, 100),
+  value = paste0(format(round(perc_completed, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+
+```{r}
+#| echo: false
+#| title: Eligible Screened Overall
+#| content: valuebox
+
+# Proportion of eligible screened
+perc_screened <- (sum(data$screened)/sum(data$eligible))*100 
+
+# Create value box 
+list(
+  icon = "check2-circle",
+  color = color_code(perc_screened, 100),
+  value = paste0(format(round(perc_screened, digits = 2),nsmall=2), "%"
+                 )
+)
+```
+## Row
+
+### Column {width = "30%"}
+
+<!-- Overall counts data -->
+
+```{r, include=FALSE}
+overall_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(data["eligible"]), 
+            sum(data["screened"]), 
+            format(round(mean(data$num_completed), digits = 2), nsmall=2))
+) 
+
+```
+
+<!-- This week's counts data -->
+
+```{r, include=FALSE}
+week_stats <- data.frame(
+  name = c("Eligible Patient Appointments", "Screenings", 
+           "Average Number of Items Answered"),
+  value = c(sum(week["eligible"]), 
+            sum(week["screened"]), 
+            format(round(mean(week$num_completed), digits = 2), nsmall=2))
+) 
+```
+
+#### Row
+
+<!-- Create this week's counts table -->
+
+```{r, echo=FALSE}
+table_format(week_stats, "\nThis Week\n\n") 
+```
+
+#### Row
+
+<!-- Create overall counts table -->
+
+```{r}
+table_format(overall_stats, "\nOverall\n\n")
+```   

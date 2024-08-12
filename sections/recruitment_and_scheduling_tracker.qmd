@@ -1,0 +1,511 @@
+---
+title: "Recruitment and Scheduling Tracker"
+format: dashboard
+scrolling: true 
+---
+
+```{r, include = FALSE}
+# Libraries
+library(plotly)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(flextable)
+library(officer)
+library(forcats, include.only = c("fct_reorder"))
+library(flexdashboard)
+library(forcats)
+```
+
+```{r, include = FALSE}
+# Load data
+data_path <- here::here("data", "recruitment_mock_data_calc.rds")
+data <- readRDS(data_path)
+
+# Load functions
+source(here::here("r", "color_alert.R"))
+source(here::here("r", "format_table.R"))
+source(here::here("r", "month_name_year.R"))
+source(here::here("r", "gauge_chart.R"))
+```
+
+#  {.sidebar}
+
+<!-- Create Sidebar -->
+
+```{r, echo=FALSE}
+head_1 <- "This dashboard displays statistics for:\n\n"
+
+data.frame(
+  names = c("File Name", "Last Modified"),
+  values = c(basename(data_path), format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.3), unit = "in") %>%
+  add_header_lines(head_1) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+```{r, echo=FALSE}
+subjects <- data %>% select(dyad_id) %>% unique() %>% nrow()
+recruiters <- data %>% select(rec_id) %>% unique() %>% nrow()
+calls <- data %>% nrow()
+time_period <- paste(min(as.Date(data$call_date_time)), "to", 
+                     max(as.Date(data$call_date_time)))
+
+head_2 <- "This data references:\n\n"
+
+data.frame(
+  names = c("Subjects", "Recruiters", "Calls", "Time Period"),
+  values = c(subjects, recruiters, calls, time_period)
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.2), unit = "in") %>%
+  add_header_lines(head_2) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+# Overview {orientation="columns"}
+
+## Column {width="30%"}
+### Row {height="20%"}
+
+```{r, echo = FALSE}
+#|height: 150px
+# Goal for total follow up interviews completed
+goal <- 180
+
+# Number of currently completed follow up interviews
+completed_interviews <- data %>% filter(!is.na(gift_card_id)) %>%
+  select(dyad_id) %>% unique() %>% nrow()
+
+# sectors <- gaugeSectors(
+#   success = c(goal*(80/100), goal*(100/100)),
+#   warning = c(goal*(60/100), goal*(79/100)),
+#   danger = c(goal*(0/100), goal*(59/100)),
+#   colors = c("#70bfb3", "#ffb700", "#ff625e")
+# )
+# 
+# gauge(completed_interviews, min = 0, max = goal,
+#       sectors = sectors)
+
+ gauge_chart(completed_interviews, goal)
+```
+
+### Row
+```{r}
+#| echo: false
+#| title: Total calls made
+#| content: valuebox
+#| height: 50%
+
+tot_calls <- data %>% nrow()
+
+# Create value box
+list(
+  icon = "telephone-outbound",
+  color = "vb-blue",
+  value = tot_calls
+)
+```
+
+```{r}
+#| echo: false
+#| title: Average calls per day
+#| content: valuebox
+#| height: 50%
+
+calls_per_day <- data %>%
+  group_by(call_date) %>%
+  reframe(
+    calls_per_day = n()
+  )
+
+av_calls_per_day <- mean(calls_per_day$calls_per_day) %>% round(., 1)
+
+av_calls_per_day <- mean(calls_per_day$calls_per_day) %>% round(., 1)
+
+# Create value box
+list(
+  icon = "telephone-outbound",
+  color = "vb-blue",
+  value = av_calls_per_day
+)
+```
+
+### Row
+```{r}
+#| echo: false
+#| title: Total follow-up interviews scheduled
+#| content: valuebox
+
+int_scheduled <- data %>%
+  filter(pc_yes_result == "Interview scheduled") %>% select(dyad_id) %>%
+  unique() %>%
+  nrow()
+
+# Create value box
+list(
+  icon = "calendar-week",
+  color = "vb-blue",
+  value = int_scheduled
+)
+```
+
+```{r}
+#| echo: false
+#| title: Follow-up interview scheduling rate
+#| content: valuebox
+
+rate_scheduled <- round(tot_calls/int_scheduled)
+scheduled_message <- paste("1 per", rate_scheduled, "calls")
+
+# Create value box
+list(
+  icon = "list-check",
+  color = "vb-blue",
+  value = scheduled_message
+)
+```
+### Row
+```{r}
+#| echo: false
+#| title: Average calls per dyad
+#| content: valuebox
+
+calls_per_dyad <- data %>%
+  group_by(dyad_id) %>%
+  summarise(
+    calls_per_dyad = n()
+  )
+
+av_calls_per_dyad <- mean(calls_per_dyad$calls_per_dyad) %>% round(., 1)
+
+# Create value box
+list(
+  icon = "telephone-outbound",
+  color = "vb-blue",
+  value = av_calls_per_dyad
+)
+```
+
+```{r}
+#| echo: false
+#| title: Total calls made 2 weeks ago
+#| content: valuebox
+
+calls_2_weeks <- data %>%
+  filter(as.Date(call_date) %in% seq(max(as.Date(call_date)) - 20,
+                                     max(as.Date(call_date)) - 14 , "day")) %>% nrow()
+
+# Create value box
+list(
+  icon = "telephone-outbound",
+  color = "vb-blue",
+  value = calls_2_weeks
+)
+```
+### Row
+```{r}
+#| echo: false
+#| title: Total calls made last week
+#| content: valuebox
+
+calls_1_week <- data %>%
+  filter(as.Date(call_date) %in% seq(max(as.Date(call_date)) - 13,
+                                     max(as.Date(call_date)) - 7, "day")
+         ) %>%
+  nrow()
+
+# Create value box
+list(
+  icon = "telephone-outbound",
+  color = "vb-blue",
+  value = calls_1_week
+)
+```
+
+```{r}
+#| echo: false
+#| title: Percent change between two weeks ago and last week
+#| content: valuebox
+
+pct_change <- (abs(calls_1_week - calls_2_weeks)/ calls_1_week)*100
+
+# Create value box
+list(
+  icon = "telephone-outbound",
+  color = "vb-blue",
+  value = paste0(format(round(pct_change, 2), nsmall = 2), "%")
+)
+```
+## Column
+```{r, echo=FALSE}
+#| title: Recruiting calls made and follow-up interviews scheduled by date
+ht_text <- paste("<br>Date: %{x}",
+  "<br>N called: %{y}", 
+  "<br>N scheduled: %{text} <extra></extra>")
+
+data %>%
+  group_by(call_date) %>%
+  mutate(
+    fu_scheduled = case_when(
+      length(which(pc_yes_result == "Interview scheduled")) == 0     ~ "None",
+      any(pc_yes_result == "Interview scheduled") & 
+        length(which(pc_yes_result == "Interview scheduled")) == 1   ~ "1",
+      any(pc_yes_result == "Interview scheduled") & 
+        length(which(pc_yes_result == "Interview scheduled")) > 1    ~ "2 or More",
+    )
+  ) %>% 
+  reframe(
+    call_date,
+    call_month_yr,
+    calls_per_day = n(),
+    fu_scheduled
+  ) %>% distinct() %>%
+plot_ly(
+  x = ~call_date,
+  y = ~ calls_per_day,
+  type = "scatter",
+  mode = "lines+markers",
+  line = list(
+    color = '#ededed'),
+  color = ~fu_scheduled,
+  text = ~ fu_scheduled,
+  hovertemplate = ht_text
+) %>%
+  layout(
+    yaxis = list(
+      zerolinecolor = 'black',
+      title = "Number of Calls"
+    ),
+    xaxis = list(
+      title = "Date",
+      zerolinecolor = 'black'
+    ),
+    legend=list(title=list(text='<b>F/U Scheduled </b>'))
+  )
+```
+
+```{r, echo=FALSE}
+#| title: Recruiting calls made and follow-up interviews scheduled by date
+ht_text <- paste("<br>Date: %{x}",
+  "<br>Ratio: %{y}")
+
+data %>%
+  group_by(call_date) %>%
+  mutate(
+    fu_scheduled = length(which(pc_yes_result == "Interview scheduled"))
+  ) %>% 
+  reframe(
+    call_date,
+    call_month_yr,
+    calls_per_day = n(),
+    fu_scheduled
+  ) %>% distinct() %>%
+  mutate(
+    ratio = fu_scheduled/calls_per_day
+  ) %>%
+plot_ly(
+  x = ~ call_date,
+  y = ~ ratio,
+  type = "scatter",
+  mode = "lines+markers",
+  line = list(
+    color = '#ededed'),
+  hovertemplate = ht_text
+) %>%
+  layout(
+    yaxis = list(
+      zerolinecolor = 'black',
+      title = "Ratio of N Scheduled to N Calls"
+    ),
+    xaxis = list(
+      title = "Date",
+      zerolinecolor = 'black'
+    )
+  )
+```
+
+# Call Timing {orientation="columns"}
+## Column
+```{r}
+formatted_flex <- function(df, header_list){
+  df %>% flextable() %>%
+  set_header_labels(values = header_list) %>%
+  width(width = 2, unit = "in")%>%
+  # Align body
+  align(j = -c(1), part = "all", align = "center") %>%
+  bold(part = "header") %>%
+  border_remove() %>%
+  hline(part = "header", border = fp_border(color = "#ededed",
+                                            width = 2)) %>%
+  hline(part = "body", border = fp_border(color = "#ededed"))
+}
+```
+
+
+```{r, echo=FALSE}
+#| title: Follow-up interviews scheduled by day of the week
+h_list <- list(call_day = "Day",
+               calls_made = "Calls Made",
+               fu_sch = "F/U Interviews Scheduled",
+               perc_sch = "Percent Scheduled")
+  
+data %>%
+  group_by(call_day) %>%
+  summarise(
+    calls_made = n(),
+    fu_sch = length(which(pc_yes_result == "Interview scheduled")),
+    perc_sch = paste0(format(round((fu_sch/calls_made)*100, 2), 
+                             nsmall = 2), "%")
+  ) %>% arrange(call_day) %>%
+  formatted_flex(., h_list)
+
+```
+
+```{r, echo=FALSE}
+#| title: Follow-up interviews scheduled by time of day
+h_list <- list(call_hour_f = "Time of Day",
+               calls_made = "Calls Made",
+               fu_sch = "F/U Interviews Scheduled",
+               perc_sch = "Percent Scheduled")
+
+data %>%
+  group_by(call_hour_f) %>%
+  summarise(
+    calls_made = n(),
+    fu_sch = length(which(pc_yes_result == "Interview scheduled")),
+    perc_sch = paste0(format(round((fu_sch/calls_made)*100, 2), 
+                             nsmall = 2), "%")
+  ) %>% arrange(call_hour_f) %>%
+  formatted_flex(., h_list)
+```
+
+## Column
+```{r, echo=FALSE}
+#| title: Calls made by day of the week
+ht_text_1 <- paste("<br>Day: %{x}",
+  "<br>N: %{y}",
+  "<extra></extra>")
+
+ht_text_2 <- paste("<br>Day: %{x}",
+  "<br>Mean: %{y}",
+  "<extra></extra>")
+
+calls_per_date <- data %>%
+  group_by(call_date) %>%
+  reframe(
+    call_day,
+    calls_per_day = n()
+  ) %>% 
+  distinct() %>%
+  ungroup() %>%
+  group_by(call_day) %>%
+  mutate(
+    mean_calls_per_wk_dy = sum(calls_per_day)/n()
+  ) %>% arrange(call_day) %>% select(call_day, call_date, calls_per_day, 
+                                     mean_calls_per_wk_dy)
+
+per_date_plot <- plot_ly() %>%
+  add_trace(
+  x = calls_per_date$call_day,
+  y = calls_per_date$calls_per_day,
+  type = "scatter",
+  mode = "markers",
+  color = calls_per_date$call_day,
+  hovertemplate = ht_text_1
+) %>%
+  layout(
+    yaxis = list(
+      zerolinecolor = 'black',
+      title = "Number of Calls Per Date"
+    ),
+    xaxis = list(
+      title = "Day",
+      zerolinecolor = 'black'
+    ),
+    showlegend = FALSE
+  )
+
+
+mean_calls_per_date <- calls_per_date %>%
+  select(call_day, mean_calls_per_wk_dy) %>% distinct()
+
+
+per_date_plot %>% add_trace(x = mean_calls_per_date$call_day,
+                            y = mean_calls_per_date$mean_calls_per_wk_dy,
+                            type = "scatter",
+                            mode = "markers",
+                            marker = list(symbol = "line-ew-open",
+                                          size = 20),
+                            color = mean_calls_per_date$call_day,
+                            hovertemplate = ht_text_2,
+                            textposition = FALSE
+)
+# vals
+```
+
+```{r, echo=FALSE}
+#| title: Calls by time of day
+time_day_plot <- data %>% 
+  group_by(call_hour_f) %>%
+  reframe(
+    calls_per_time = n(),
+    text_label = paste0("Time of Day: ", call_hour_f, "\nN: ", calls_per_time)
+  ) %>% distinct() %>%
+  ggplot(
+    aes(x = calls_per_time, y = call_hour_f, fill = calls_per_time, 
+        text = paste(text_label))
+  ) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+  ) +
+    xlab("Number of Calls") +
+    ylab("Time of the Day")
+
+ggplotly(time_day_plot, tooltip = c("text"), textposition = "center") %>%
+  layout(hoverlabel = list(align="left")
+         )
+```
+# Call Responses
+
+```{r, echo = FALSE}
+#| title: Call log responses overall
+h_list <- list(overall_response = "Call Log Responses Overall",
+               cumm_count = "Cummulative Count")
+
+data %>% 
+  arrange(overall_response) %>%
+  group_by(overall_response) %>%
+  summarise(
+    Count = n()
+  ) %>% distinct() %>%
+  ungroup() %>%
+  mutate(
+    cumm_count = cumsum(Count),
+    Percent = (Count/sum(Count) * 100) %>% round(0) %>% paste0("%")
+  ) %>%
+  formatted_flex(., h_list)
+
+
+```
+
+

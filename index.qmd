@@ -1,0 +1,33 @@
+---
+title: "Clinician Follow-Up Interview Completion Tracker "
+format: dashboard
+scrolling: true 
+---
+
+
+```{r, include = FALSE}
+# Libraries
+library(plotly)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(flextable)
+library(officer)
+library(forcats, include.only = c("fct_reorder"))
+```
+
+```{r}
+side_bar <- function(df){
+  sb <- paste(
+    cat("#  {.sidebar}\n"),
+    "```{r, results = 'asis', echo = FALSE}\n",
+    2 + 2,
+    "\n```", sep = "")
+  cat(sb)
+}
+```
+
+```{r, results = 'asis', echo = FALSE}
+side_bar(df)
+```
+

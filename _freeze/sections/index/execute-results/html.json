@@ -1,9 +1,11 @@
 {
-  "hash": "16d6ad55db778ddda78cdde3afd5ca86",
+  "hash": "5f791f4a9844c76d85cb03c4e44c15b6",
   "result": {
     "engine": "knitr",
-    "markdown": "---\ntitle: \"Clinician Follow-Up Interview Completion Tracker \"\nformat: dashboard\nscrolling: true \n---\n\n\nDETECT Dashboards...\n\n\n\n\n",
-    "supporting": [],
+    "markdown": "---\ntitle: \"Clinician Follow-Up Interview Completion Tracker \"\nformat: dashboard\nscrolling: true \n---\n\n\n\n::: {.cell}\n\n:::\n\n#  {.sidebar}\n```{r, results = 'asis', echo = FALSE}\n4\n```\n",
+    "supporting": [
+      "index_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

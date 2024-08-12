@@ -1,0 +1,15 @@
+{
+  "hash": "01af7a1b96f86ae1cdb800f0dbbf34a1",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Mock Data Creation\"\n---\n\n\n\n\n\n\n\n\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsaveRDS(mock_data_rc, here::here(\"data\", \"mock_data_redcap_alerts.rds\"))\nsaveRDS(mock_data, here::here(\"data\", \"mock_data.rds\"))\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

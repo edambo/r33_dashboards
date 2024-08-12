@@ -1,4 +1,4 @@
-# Create interactive time series plot
+# Create interactive time series plot for the clinician completion tracker dashboard
 
 time_series <- function(df, y_var, group_var, hovertemplate_text, y_ax_title){
   plot_ly(

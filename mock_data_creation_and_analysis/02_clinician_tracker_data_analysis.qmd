@@ -1,0 +1,67 @@
+# Load Packages
+```{r}
+library(dplyr)
+library(here)
+library(ids)
+library(lubridate, include.only = c("year", "month", "day"))
+```
+
+```{r}
+# Load function for converting POSIXct dates to a Month YYYY format.
+source(here::here("r", "month_name_year.R"))
+```
+# Load data
+
+```{r}
+raw_data <- readRDS(here::here("data", "clinician_tracker_mock_data_raw.rds"))
+```
+
+# Add calculated values to raw clinician tracker data
+```{r}
+data_com <- raw_data %>%
+  mutate(
+    num_completed = case_when(
+      screened == 1 ~ sample(c(sample(c(0:12), 902, replace = TRUE), rep(12, (13158-902)))),
+      TRUE          ~ NA
+      ),
+    perc_completed = (num_completed/12)*100
+  )
+```
+
+
+```{r}
+# Create date column with Month YYYY format.
+clin_data <- month_year(data_com, visit_date, "month_year") %>%
+  # Calculate proportion screened and proportion of screening questions answered 
+  # each month for each clinic 
+  group_by(month_year, clinic_name) %>%
+  mutate(
+    perc_screened_month_clinic = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),
+    perc_items_month_clinic = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)
+  ) %>%
+  ungroup() %>%
+  group_by(month_year, name_full_phys) %>%
+  # Calculate proportion screened and proportion of screening questions answered 
+  # each month for each physician
+  mutate(
+    perc_screened_month_phys = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),
+    perc_items_month_phys = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)
+    ) %>%
+  ungroup() %>%
+  # Convert NaN to NA
+  mutate(
+    across(
+      .cols = c(starts_with("perc_items"), starts_with("perc_screened")),
+      .fns = ~ case_when(
+        .x == NaN ~ NA,
+        TRUE      ~ .x
+      )
+    )
+  )
+```
+
+# Save data
+```{r}
+# Save clinician tracking data
+saveRDS(clin_data, here::here("data", "clinician_tracker_mock_data_calc.rds"))
+```
