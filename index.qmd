@@ -1,33 +1,26 @@
----
-title: "Clinician Follow-Up Interview Completion Tracker "
-format: dashboard
-scrolling: true 
----
+# R33 Phase Cluster-Randomized Controlled Trial
+ 
+## Objectives
+Our primary objective is to evaluate whether the use of the DETECT-RPC screening tool increases the average reporting of EM by HBPC clinicians relative to a baseline period where they did not use the DETECT-RPC screening tool. 
 
+There are two protocols for this phase:
 
-```{r, include = FALSE}
-# Libraries
-library(plotly)
-library(here)
-library(dplyr)
-library(ggplot2)
-library(flextable)
-library(officer)
-library(forcats, include.only = c("fct_reorder"))
-```
+  1. Universal EM Screening (RCT)
+  2. Caregiver Dyad Follow-Up Interviews
 
-```{r}
-side_bar <- function(df){
-  sb <- paste(
-    cat("#  {.sidebar}\n"),
-    "```{r, results = 'asis', echo = FALSE}\n",
-    2 + 2,
-    "\n```", sep = "")
-  cat(sb)
-}
-```
+### Universal EM Screening (RCT)
+In this phase of the study (year 3-5), we will randomize approximately 43 home-based primary care clinicians to either use the adapted DETECT screening tool at every qualified home based primary care patient encounter (experimental condition) or continue to provide standard care (control condition). Providers randomized to the experimental condition will use the adapted DETECT tool at every qualified patient encounter. A waiver of informed consent is approved, as it requires no direct input from the patient; rather, it is a purely observation-based tool, which is completed by the clinician. Over the three years of follow-up, we expect our partner home-based primary care programs to treat approximately 6,150 older adults. Through the randomization process, we expect half of that number to be screened by a clinician using the adapted DETECT tool.
 
-```{r, results = 'asis', echo = FALSE}
-side_bar(df)
-```
+### Caregiver Dyad Follow-Up Interviews
+In this phase, we will recruit a purposive sample of 180 caregiving dyads consisting of family caregivers and their care recipients, half of which will be living with Alzheimer’s Disease or Related Dementias (ADRD). The study is recruiting dyads because we are interested in caregiver behaviors and their relationship to care recipient outcomes. The caregiving dyads will be recruited from among patients who are actively enrolled in one of our site-specific home-based primary care programs.
+
+## R33 Specific Aims
+  1. Rigorously evaluate the impact of DETECT-RPC on clinician identification and reporting of older adults with increased risk of EM to the appropriate authorities (RFA key question KQ3).
+  2. Rigorously evaluate the effect of DETECT-RPC on targeted mechanisms of action (i.e., current barriers to identification and reporting) elucidated in the R61 phase of the study (mixed-methods).
+  3. Rigorously evaluate the benefits (i.e., reduce exposure to abuse and neglect, reduced physical or mental morbidity, and reduced mortality) and harms of screening with DETECT-RPC (RFA key questions KQ1 and KQ4) (mixed-methods).
+
+## R33 Annual Milestones
+  1. Report on the progress towards recruiting goals.
+  2. Report the fidelity of DETECT-RPC use at each of the study sites 
+  3. Report on adverse events and clinical trial stopping criteria.
 

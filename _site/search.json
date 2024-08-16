@@ -1,45 +1,38 @@
 [
   {
-    "objectID": "sections/about.html",
-    "href": "sections/about.html",
-    "title": "About",
-    "section": "",
-    "text": "About this site\n\n1 + 1\n\n[1] 2"
-  },
-  {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html",
+    "objectID": "mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
+    "href": "mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
     "title": "Load Packages",
     "section": "",
-    "text": "library(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(lubridate, include.only = c(\"year\", \"month\", \"day\", \"hour\"))\n\nWarning: package 'lubridate' was built under R version 4.3.2\n\n\n\n# Load function for converting POSIXct dates to a Month YYYY format.\nsource(here::here(\"r\", \"month_name_year.R\"))"
+    "text": "Load Packages\n\nlibrary(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(lubridate, include.only = c(\"year\", \"month\", \"day\"))\n\nWarning: package 'lubridate' was built under R version 4.3.2\n\n\n\n# Load function for converting POSIXct dates to a Month YYYY format.\nsource(here::here(\"r\", \"month_name_year.R\"))\n\n\n\nLoad data\n\nraw_data &lt;- readRDS(here::here(\"data\", \"clinician_tracker_mock_data_raw.rds\"))\n\n\n\nAdd calculated values to raw clinician tracker data\n\ndata_com &lt;- raw_data %&gt;%\n  mutate(\n    num_completed = case_when(\n      screened == 1 ~ sample(c(sample(c(0:12), 902, replace = TRUE), rep(12, (13158-902)))),\n      TRUE          ~ NA\n      ),\n    perc_completed = (num_completed/12)*100\n  )\n\n\n# Create date column with Month YYYY format.\nclin_data &lt;- month_year(data_com, visit_date, \"month_year\") %&gt;%\n  # Calculate proportion screened and proportion of screening questions answered \n  # each month for each clinic \n  group_by(month_year, clinic_name) %&gt;%\n  mutate(\n    perc_screened_month_clinic = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),\n    perc_items_month_clinic = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)\n  ) %&gt;%\n  ungroup() %&gt;%\n  group_by(month_year, name_full_phys) %&gt;%\n  # Calculate proportion screened and proportion of screening questions answered \n  # each month for each physician\n  mutate(\n    perc_screened_month_phys = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),\n    perc_items_month_phys = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)\n    ) %&gt;%\n  ungroup() %&gt;%\n  # Convert NaN to NA\n  mutate(\n    across(\n      .cols = c(starts_with(\"perc_items\"), starts_with(\"perc_screened\")),\n      .fns = ~ case_when(\n        .x == NaN ~ NA,\n        TRUE      ~ .x\n      )\n    )\n  )\n\n\n\nSave data\n\n# Save clinician tracking data\nsaveRDS(clin_data, here::here(\"data\", \"clinician_tracker_mock_data_calc.rds\"))"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
-    "title": "Load Packages",
-    "section": "Split the date-time variable",
-    "text": "Split the date-time variable\n\ndate_time &lt;- raw_data %&gt;% \n  mutate(\n    call_hour = lubridate::hour(call_date_time),\n    call_hour_f = factor(call_hour, \n      labels = c(\"9-9:59\", \"10-10:59\", \"11-11:59\", \"12-12:59\", \"13-13:59\", \n                 \"14-14:59\", \"15-15:59\", \"16-16:59\", \"17\")\n      ),\n    call_day = weekdays(as.Date(call_date_time)),\n    call_day = factor(call_day,\n                      levels = c(\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\")),\n    call_date = as.Date(call_date_time)\n    )%&gt;%\n      month_year(call_date_time, \"call_month_yr\") %&gt;%\n      relocate(c(call_month_yr, call_date, call_day, call_hour, call_hour_f), \n               .after = \"call_date_time\")"
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "R33 Phase Cluster-Randomized Controlled Trial",
+    "section": "",
+    "text": "Our primary objective is to evaluate whether the use of the DETECT-RPC screening tool increases the average reporting of EM by HBPC clinicians relative to a baseline period where they did not use the DETECT-RPC screening tool.\nThere are two protocols for this phase:\n\nUniversal EM Screening (RCT)\nCaregiver Dyad Follow-Up Interviews\n\n\n\nIn this phase of the study (year 3-5), we will randomize approximately 43 home-based primary care clinicians to either use the adapted DETECT screening tool at every qualified home based primary care patient encounter (experimental condition) or continue to provide standard care (control condition). Providers randomized to the experimental condition will use the adapted DETECT tool at every qualified patient encounter. A waiver of informed consent is approved, as it requires no direct input from the patient; rather, it is a purely observation-based tool, which is completed by the clinician. Over the three years of follow-up, we expect our partner home-based primary care programs to treat approximately 6,150 older adults. Through the randomization process, we expect half of that number to be screened by a clinician using the adapted DETECT tool.\n\n\n\nIn this phase, we will recruit a purposive sample of 180 caregiving dyads consisting of family caregivers and their care recipients, half of which will be living with Alzheimer’s Disease or Related Dementias (ADRD). The study is recruiting dyads because we are interested in caregiver behaviors and their relationship to care recipient outcomes. The caregiving dyads will be recruited from among patients who are actively enrolled in one of our site-specific home-based primary care programs.\n\n\n\n\n\nRigorously evaluate the impact of DETECT-RPC on clinician identification and reporting of older adults with increased risk of EM to the appropriate authorities (RFA key question KQ3).\nRigorously evaluate the effect of DETECT-RPC on targeted mechanisms of action (i.e., current barriers to identification and reporting) elucidated in the R61 phase of the study (mixed-methods).\nRigorously evaluate the benefits (i.e., reduce exposure to abuse and neglect, reduced physical or mental morbidity, and reduced mortality) and harms of screening with DETECT-RPC (RFA key questions KQ1 and KQ4) (mixed-methods).\n\n\n\n\n\nReport on the progress towards recruiting goals.\nReport the fidelity of DETECT-RPC use at each of the study sites\nReport on adverse events and clinical trial stopping criteria."
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
-    "title": "Load Packages",
-    "section": "Gift card data (Gift card ID, person ID and dyad ID)",
-    "text": "Gift card data (Gift card ID, person ID and dyad ID)\n\nset.seed(56)\ngift_card &lt;- date_time %&gt;% select(dyad_id, pc_yes_result) %&gt;% filter(pc_yes_result == \"Interview scheduled\") %&gt;% slice_sample(n = 180) %&gt;%\n  mutate(\n    gift_card_id = ids::random_id(nrow(.), 5)\n  ) %&gt;% select(-c(pc_yes_result))"
+    "objectID": "index.html#objectives",
+    "href": "index.html#objectives",
+    "title": "R33 Phase Cluster-Randomized Controlled Trial",
+    "section": "",
+    "text": "Our primary objective is to evaluate whether the use of the DETECT-RPC screening tool increases the average reporting of EM by HBPC clinicians relative to a baseline period where they did not use the DETECT-RPC screening tool.\nThere are two protocols for this phase:\n\nUniversal EM Screening (RCT)\nCaregiver Dyad Follow-Up Interviews\n\n\n\nIn this phase of the study (year 3-5), we will randomize approximately 43 home-based primary care clinicians to either use the adapted DETECT screening tool at every qualified home based primary care patient encounter (experimental condition) or continue to provide standard care (control condition). Providers randomized to the experimental condition will use the adapted DETECT tool at every qualified patient encounter. A waiver of informed consent is approved, as it requires no direct input from the patient; rather, it is a purely observation-based tool, which is completed by the clinician. Over the three years of follow-up, we expect our partner home-based primary care programs to treat approximately 6,150 older adults. Through the randomization process, we expect half of that number to be screened by a clinician using the adapted DETECT tool.\n\n\n\nIn this phase, we will recruit a purposive sample of 180 caregiving dyads consisting of family caregivers and their care recipients, half of which will be living with Alzheimer’s Disease or Related Dementias (ADRD). The study is recruiting dyads because we are interested in caregiver behaviors and their relationship to care recipient outcomes. The caregiving dyads will be recruited from among patients who are actively enrolled in one of our site-specific home-based primary care programs."
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
-    "title": "Load Packages",
-    "section": "Join to Gift card Data",
-    "text": "Join to Gift card Data\n\nrec_sch_gift &lt;- date_time %&gt;% left_join(., gift_card, by = \"dyad_id\")"
+    "objectID": "index.html#r33-specific-aims",
+    "href": "index.html#r33-specific-aims",
+    "title": "R33 Phase Cluster-Randomized Controlled Trial",
+    "section": "",
+    "text": "Rigorously evaluate the impact of DETECT-RPC on clinician identification and reporting of older adults with increased risk of EM to the appropriate authorities (RFA key question KQ3).\nRigorously evaluate the effect of DETECT-RPC on targeted mechanisms of action (i.e., current barriers to identification and reporting) elucidated in the R61 phase of the study (mixed-methods).\nRigorously evaluate the benefits (i.e., reduce exposure to abuse and neglect, reduced physical or mental morbidity, and reduced mortality) and harms of screening with DETECT-RPC (RFA key questions KQ1 and KQ4) (mixed-methods)."
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
-    "title": "Load Packages",
-    "section": "Create column of the overall responses",
-    "text": "Create column of the overall responses\n\noverall_response &lt;- rec_sch_gift %&gt;%\n  mutate(\n    overall_response = coalesce(interview_not_scheduled, pc_yes_result,\n    call_back_no, pc_no_result, no_message, left_message, answered)\n  )"
+    "objectID": "index.html#r33-annual-milestones",
+    "href": "index.html#r33-annual-milestones",
+    "title": "R33 Phase Cluster-Randomized Controlled Trial",
+    "section": "",
+    "text": "Report on the progress towards recruiting goals.\nReport the fidelity of DETECT-RPC use at each of the study sites\nReport on adverse events and clinical trial stopping criteria."
   },
   {
     "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html",
@@ -112,10 +105,38 @@
     "text": "Create a df with 1800 unique participants\n\n360 is 20% of this\nEach participant in a previous call log was called an average of 1.7 times.\n\n\n# Split the data in half so that the first half has 1800 patients and a sample of the second half will have 1260\nsecond_call &lt;- call_data %&gt;%\n  mutate(\n    second_call = case_when(\n      pc_no_result == \"Scheduled call back\" ~ 1,\n      answered == \"No answer/ busy sign\"    ~ 1,\n      TRUE                                  ~ 0\n    )\n  )\n\n# Filter 1260 participants for a second call and 540 of that (1800 - 1260) for only one call.\nset.seed(6)\nscall_y &lt;- second_call %&gt;% filter(second_call == 1) %&gt;% slice_sample(n = 1260)\nscall_n &lt;- second_call %&gt;% filter(second_call == 0) %&gt;% slice_sample(n = 540) \n\n# Dyad_ids for participants that will receive a second call\nscall_y_id &lt;- scall_y %&gt;% select(dyad_id, call_back_date_time, call_date_time) %&gt;% \n  rename(new_id = dyad_id, \n         new_call_time = call_back_date_time,\n         first_call_time = call_date_time)\n\n# Calls that will be converted to second calls\nyes_call &lt;- second_call %&gt;% \n  filter(second_call == 0 & !(dyad_id %in% scall_n$dyad_id)) %&gt;% \n  slice_sample(n = 1260) %&gt;% cbind(., scall_y_id) %&gt;%\n  # Set call time to be call back time of first call and set new id to dyad id\n  mutate(\n    dyad_id = new_id,\n    call_date_time = case_when(\n      is.na(new_call_time) == FALSE ~ new_call_time,\n      TRUE                          ~ first_call_time + lubridate::days(3)\n    ),\n    # Remove weekends\n    call_date_time = case_when(weekdays(call_date_time) %in% weekends ~ \n      call_date_time + lubridate::days(2),\n      TRUE ~ call_date_time)\n  ) %&gt;%\n  select(-c(new_id, new_call_time, first_call_time))\n  \n\nrec_raw_data &lt;- rbind(scall_y, scall_n, yes_call) %&gt;% arrange(call_date_time) %&gt;% select(-c(second_call))"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
-    "href": "mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
+    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html",
+    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html",
     "title": "Load Packages",
     "section": "",
-    "text": "Load Packages\n\nlibrary(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(lubridate, include.only = c(\"year\", \"month\", \"day\"))\n\nWarning: package 'lubridate' was built under R version 4.3.2\n\n\n\n# Load function for converting POSIXct dates to a Month YYYY format.\nsource(here::here(\"r\", \"month_name_year.R\"))\n\n\n\nLoad data\n\nraw_data &lt;- readRDS(here::here(\"data\", \"clinician_tracker_mock_data_raw.rds\"))\n\n\n\nAdd calculated values to raw clinician tracker data\n\ndata_com &lt;- raw_data %&gt;%\n  mutate(\n    num_completed = case_when(\n      screened == 1 ~ sample(c(sample(c(0:12), 902, replace = TRUE), rep(12, (13158-902)))),\n      TRUE          ~ NA\n      ),\n    perc_completed = (num_completed/12)*100\n  )\n\n\n# Create date column with Month YYYY format.\nclin_data &lt;- month_year(data_com, visit_date, \"month_year\") %&gt;%\n  # Calculate proportion screened and proportion of screening questions answered \n  # each month for each clinic \n  group_by(month_year, clinic_name) %&gt;%\n  mutate(\n    perc_screened_month_clinic = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),\n    perc_items_month_clinic = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)\n  ) %&gt;%\n  ungroup() %&gt;%\n  group_by(month_year, name_full_phys) %&gt;%\n  # Calculate proportion screened and proportion of screening questions answered \n  # each month for each physician\n  mutate(\n    perc_screened_month_phys = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),\n    perc_items_month_phys = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)\n    ) %&gt;%\n  ungroup() %&gt;%\n  # Convert NaN to NA\n  mutate(\n    across(\n      .cols = c(starts_with(\"perc_items\"), starts_with(\"perc_screened\")),\n      .fns = ~ case_when(\n        .x == NaN ~ NA,\n        TRUE      ~ .x\n      )\n    )\n  )\n\n\n\nSave data\n\n# Save clinician tracking data\nsaveRDS(clin_data, here::here(\"data\", \"clinician_tracker_mock_data_calc.rds\"))"
+    "text": "library(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(lubridate, include.only = c(\"year\", \"month\", \"day\", \"hour\"))\n\nWarning: package 'lubridate' was built under R version 4.3.2\n\n\n\n# Load function for converting POSIXct dates to a Month YYYY format.\nsource(here::here(\"r\", \"month_name_year.R\"))"
+  },
+  {
+    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
+    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
+    "title": "Load Packages",
+    "section": "Split the date-time variable",
+    "text": "Split the date-time variable\n\ndate_time &lt;- raw_data %&gt;% \n  mutate(\n    call_hour = lubridate::hour(call_date_time),\n    call_hour_f = factor(call_hour, \n      labels = c(\"9-9:59\", \"10-10:59\", \"11-11:59\", \"12-12:59\", \"13-13:59\", \n                 \"14-14:59\", \"15-15:59\", \"16-16:59\", \"17\")\n      ),\n    call_day = weekdays(as.Date(call_date_time)),\n    call_day = factor(call_day,\n                      levels = c(\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\")),\n    call_date = as.Date(call_date_time)\n    )%&gt;%\n      month_year(call_date_time, \"call_month_yr\") %&gt;%\n      relocate(c(call_month_yr, call_date, call_day, call_hour, call_hour_f), \n               .after = \"call_date_time\")"
+  },
+  {
+    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
+    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
+    "title": "Load Packages",
+    "section": "Gift card data (Gift card ID, person ID and dyad ID)",
+    "text": "Gift card data (Gift card ID, person ID and dyad ID)\n\nset.seed(56)\ngift_card &lt;- date_time %&gt;% select(dyad_id, pc_yes_result) %&gt;% filter(pc_yes_result == \"Interview scheduled\") %&gt;% slice_sample(n = 180) %&gt;%\n  mutate(\n    gift_card_id = ids::random_id(nrow(.), 5)\n  ) %&gt;% select(-c(pc_yes_result))"
+  },
+  {
+    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
+    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
+    "title": "Load Packages",
+    "section": "Join to Gift card Data",
+    "text": "Join to Gift card Data\n\nrec_sch_gift &lt;- date_time %&gt;% left_join(., gift_card, by = \"dyad_id\")"
+  },
+  {
+    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
+    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
+    "title": "Load Packages",
+    "section": "Create column of the overall responses",
+    "text": "Create column of the overall responses\n\noverall_response &lt;- rec_sch_gift %&gt;%\n  mutate(\n    overall_response = coalesce(interview_not_scheduled, pc_yes_result,\n    call_back_no, pc_no_result, no_message, left_message, answered)\n  )"
   }
 ]

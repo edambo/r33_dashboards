@@ -7,10 +7,8 @@ website:
     search: true
     logo: graphics/detect_logo.png
     left:
-      - text: "Home"
+      - text: "Overview"
         href: index.qmd
-      - text: "About"
-        href: sections/about.qmd
       - text: "Dashboards"
         menu:
           - sections/recruitment_and_scheduling_tracker.qmd
