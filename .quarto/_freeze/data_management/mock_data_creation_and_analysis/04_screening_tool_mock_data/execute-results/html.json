@@ -1,0 +1,15 @@
+{
+  "hash": "f10c786f18f89c74876344628c10d098",
+  "result": {
+    "engine": "knitr",
+    "markdown": "\n\n# Load Packages\n\n\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n\n\n# Load data\n\n\n\n::: {.cell}\n\n:::\n\n\n# Create new variables to match actual raw data\n\n\n\n::: {.cell}\n\n:::\n\n\n\n\n# Create randomly generated data for the other variables\n\n## Create mock data for each call log variable\n\n\n::: {.cell}\n\n:::\n\n\n\n## Create options\n\n\n\n::: {.cell}\n\n:::\n\n\n\n\n\n## Create options\n\n\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

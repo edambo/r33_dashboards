@@ -1,0 +1,15 @@
+{
+  "hash": "8edc72b1086f80426ec02bcb1a4be4dd",
+  "result": {
+    "engine": "knitr",
+    "markdown": "\n\n\n# Clinician Data\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n# Recruitment data\n\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

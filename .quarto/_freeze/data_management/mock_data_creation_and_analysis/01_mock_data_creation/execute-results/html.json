@@ -1,0 +1,15 @@
+{
+  "hash": "6e0318a13b416d10235dd82ee5f13cb8",
+  "result": {
+    "engine": "knitr",
+    "markdown": "Total patients seen by clinicians: 8003\nTotal eligible appointments: 9121  \nTotal screened appointments: 5210\nTotal screened patients that will be contacted for recruitment: 4863\nTotal recruited patients that will be interviewed: 180\n\nThe details for the variables created using this file are contained here: <https://uthtmc.sharepoint.com/:w:/r/sites/SPHDETECT-RPC/Shared%20Documents/DETECT-RPC%20R61%20R33%202022/0_data_folders/02_dashboards/00_documentation/03_r33_dashboards_implementation_planning_notes.docx.docx?d=we1c72482657342aea35ede2de4e980a0&csf=1&web=1&e=nUY12K>\n\n\n\n::: {.cell}\n\n:::\n\n\n\n# Clinician Screening Tracker Data\n## Unique MRNs and Dyad IDs\n\n\n\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n\n## Visit dates\n\n\n\n\n\n\n## Physician and clinics\n\n\n\n\n::: {.cell}\n\n:::\n\n\n\n## Screened assignments\n\n\n::: {.cell}\n\n:::\n\n\n\n## Create full mock data set\n\n### Add ids, clinician data and appointment times\n\n\n\n\n\n\n\n### Add eligibility and screened status\n\n\n::: {.cell}\n\n:::\n\n\n\n\n# Recruiting and Scheduling Tracker\n\n## Screened Patients to be Recruited\n\n\n\n\n::: {.cell}\n\n:::\n\n\n\n\n## Create recruiter IDs\n\n\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n\n## Create mock data for each call log variable\n\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n\n\n## Create a df with 1800 unique participants \n- 360 is 20% of this \n- Each participant in a previous call log was called an average of 1.7 times.\n\n\n::: {.cell}\n\n:::\n\n\n\n# Save data\n\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

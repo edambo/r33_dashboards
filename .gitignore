@@ -3,7 +3,11 @@
 .RData
 .Ruserdata
 
-/.quarto/
-/*data/*/
-
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data/
+.rds
+.xlsx
 .DS_Store
