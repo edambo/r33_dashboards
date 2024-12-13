@@ -1,0 +1,108 @@
+---
+title: "Screening Tool Use Tracker"
+format: dashboard
+scrolling: true 
+---
+
+<!-- ## Background and Purpose  -->
+<!-- - We don’t have access to the EPIC EMR.  -->
+<!-- - Providers will likely not be compliant with completing the research survey since it involves an extra step of doing this on REDcap, a system not integrated with their EMR.  -->
+<!-- - We need a system to check compliance so that we can take appropriate actions in a timely manner.  -->
+<!-- - We will run a dashboard report intermittently summarizing data measuring compliance pulled from REDcap.  -->
+<!-- - The purpose of the code in this file is to create such a  report. -->
+
+```{r, include = FALSE}
+# Libraries
+library(plotly)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(flextable)
+library(officer)
+library(forcats, include.only = c("fct_reorder"))
+```
+
+```{r, include = FALSE}
+# Load data
+data_path <- here::here("data", "clinician_tracker_mock_data_calc.rds")
+data <- readRDS(data_path)
+
+# Load functions
+source(here::here("r", "color_alert.R"))
+source(here::here("r", "format_table.R"))
+```
+
+
+#  {.sidebar}
+
+<!-- Create Sidebar -->
+
+```{r, echo=FALSE}
+head_1 <- "This dashboard displays statistics for:\n\n"
+
+data.frame(
+  names = c("File Name", "Last Modified"),
+  values = c(basename(data_path), format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width=c(1.2, 1.3), unit = "in") %>%
+  add_header_lines(head_1) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height= 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+```{r, echo=FALSE}
+subjects <- data %>% select(mrn) %>% unique() %>% nrow()
+clinicians <- data %>% select(name_full_phys) %>% unique() %>% nrow()
+appointments <- data %>% nrow()
+time_period <- paste(min(as.Date(data$visit_date)), "to", max(as.Date(data$visit_date)))
+
+head_2 <- "This data references:\n\n"
+
+data.frame(
+  names = c("Subjects", "Clinicians", "Appointments", "Time Period"),
+  values = c(subjects, clinicians, appointments, time_period)
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width=c(1.2, 1.2), unit = "in") %>%
+  add_header_lines(head_2) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height= 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+
+# All
+
+```{r}
+formatted_flex <- function(df, header_list){
+  df %>% flextable() %>%
+  set_header_labels(values = header_list) %>%
+  width(width = 2, unit = "in")%>%
+  # Align body
+  align(j = -c(1), part = "all", align = "center") %>%
+  bold(part = "header") %>%
+  border_remove() %>%
+  hline(part = "header", border = fp_border(color = "#ededed",
+                                            width = 2)) %>%
+  hline(part = "body", border = fp_border(color = "#ededed"))
+}
+```
+
+```{r}
+
+```
+

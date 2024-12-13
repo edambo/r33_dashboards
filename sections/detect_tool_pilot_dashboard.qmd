@@ -1,0 +1,2223 @@
+---
+title: "DETECT Tool Pilot"
+format: dashboard
+scrolling: true 
+---
+
+```{r, include = FALSE}
+# Libraries
+library(here)
+library(dplyr)
+library(flextable)
+library(officer)
+```
+
+```{r, include = FALSE}
+# Load data
+data_path <- here::here("data", "detect_tool_pilot.RDS")
+pilot_data <- readRDS(data_path)
+link_data <- readRDS(here::here("data", 
+                               "detect_tool_pilot_link_hits_long_format.RDS"))
+
+var_desc <- readRDS(here::here("data", 
+                               "detect_tool_pilot_variable_descriptions.RDS"))
+
+# Load functions
+source(here::here("r", "format_table.R"))
+```
+
+#  {.sidebar}
+
+<!-- Create Sidebar -->
+
+```{r, echo=FALSE}
+head_1 <- "This dashboard displays statistics for:\n\n"
+
+data.frame(
+  names = c("File Name", "Last Modified"),
+  values = c(basename(data_path), format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.3), unit = "in") %>%
+  add_header_lines(head_1) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+```{r, echo=FALSE}
+subjects <- pilot_data %>% select(ri_patient_mrn) %>% unique() %>% nrow()
+clinicians <- pilot_data %>% select(ri_clinician_name) %>% unique() %>% nrow()
+survey_responses <- pilot_data %>% nrow()
+time_period <- paste(min(as.Date(pilot_data$ri_date)), "to", 
+                     max(as.Date(pilot_data$ri_date)))
+
+head_2 <- "This data references:\n\n"
+
+data.frame(
+  names = c("Subjects", "Clinicians", "Survey Responses", "Time Period"),
+  values = c(subjects, clinicians, survey_responses, time_period)
+) %>% flextable() %>%
+  delete_part(part = "header") %>%
+  bold(j = 1, part = "body") %>%
+  border_remove() %>%
+  width(j = c(1,2), width = c(1.2, 1.2), unit = "in") %>%
+  add_header_lines(head_2) %>%
+  color(j = c(1,2), color = "#6c757d", part = "body") %>%
+  color(i = c(1), color = "#6c757d", part = "header") %>%
+  bg(bg = "#ffffff", part = "body") %>%
+  hline(part = "body", border = fp_border(color = "#f3f3f3")) %>%
+  height_all(height = 0.5, unit = "in") %>%
+  hrule(rule = "exact")
+
+```
+
+# All
+
+```{r, include=FALSE}
+screening_items <- c("ri_necessities", "ri_environment", "ri_caregiver", "ri_sedated", "ri_isolated", "ri_anxious", "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+screening_items_opt <- c("ri_caregiver_un_reason")
+
+screening_items_tb <- c("ri_environment_un_reason", "ri_caregiver_oth", "ri_patient_assess")
+
+em_status_opt <- c("ri_em_no_reason", "ri_em_reason")
+
+em_type <- c("ri_em_type_1", "ri_em_type_2", "ri_em_type_3", "ri_em_type_4", "ri_em_type_5", "ri_em_type_6", "ri_em_type_7", "ri_em_type_98", "ri_em_type_99")
+
+text_boxes <- c(screening_items_tb, em_status_opt, "ri_em_type_other",  "ri_aps_no_reason", 
+        "ri_refer_svcs_specify", "ri_reflection_notes")
+
+status_response <- c("suspect_em", "ri_report", "r_refer_svcs", "ri_reflection")
+  
+# "ri_report", "ri_aps_no_reason", "r_refer_svcs", "ri_refer_svcs_specify",
+# "ri_reflection", "r_refer_svcs"
+
+
+```
+
+```{r, include = FALSE}
+formatted_flex <- function(df, header_list){
+  df %>% flextable() %>%
+  set_header_labels(values = header_list) %>%
+  width(j = c(1,2), width = c(2.5, 1.5), unit = "in")%>%
+  # Align body
+  align(j = -c(1,2), part = "all", align = "center") %>%
+  bold(part = "header") %>%
+  border_remove() %>%
+  hline(part = "header", border = fp_border(color = "#ededed",
+                                            width = 2)) %>%
+  hline(part = "body", border = fp_border(color = "#ededed")) %>%
+  colformat_num(
+  na_str = "N/A"
+)
+}
+
+merge_custom <- function(ft, x, columns){
+  z <- rle(x)
+  rows_at <- cumsum(z$lengths) - z$lengths + 1
+
+  for(i in seq_along(rows_at)){
+    for(j in columns)
+      ft <- merge_at(x = ft, i = seq( rows_at[i], rows_at[i] + z$lengths[i] - 1), 
+                     j = j)
+  }
+
+  ft
+}
+```
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = subjects
+)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- pilot_data %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- pilot_data %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- pilot_data %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+<!-- One of the days (11/11) could not be viewed. This impacted the reporting guidelines for TX link. The number of clicks could have either any number from 0 to 3 for that day.-->
+
+```{r}
+#| echo: false
+#| title: Link Clicks
+#| content: valuebox
+
+link_clicks <- link_data %>% filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-blue",
+  value = link_clicks
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- pilot_data %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- pilot_data %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- pilot_data %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- pilot_data %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+# Baylor
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+baylor_pd <- pilot_data %>% 
+  filter(ri_institution == "Baylor College of Medicine - BT House Calls")
+
+unique_baylor <- baylor_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_baylor
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- baylor_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- baylor_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- baylor_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- baylor_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- baylor_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- baylor_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- baylor_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+# Johns Hopkins
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+jh_pd <- pilot_data %>% 
+  filter(ri_institution == "Johns Hopkins - JHOME")
+
+unique_jh <- jh_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_jh
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- jh_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- jh_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- jh_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- jh_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- jh_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- jh_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- jh_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+# UCSF
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+ucsf_pd <- pilot_data %>% 
+  filter(ri_institution == "UCSF - Care at Home Program")
+
+unique_ucsf <- ucsf_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_ucsf
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- ucsf_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- ucsf_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- ucsf_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- ucsf_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- ucsf_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- ucsf_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- ucsf_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+# UAB
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+uab_pd <- pilot_data %>% 
+  filter(ri_institution == "University of Alabama - UAB House Calls")
+
+unique_uab <- uab_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_uab
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- uab_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- uab_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- uab_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- uab_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- uab_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- uab_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- uab_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+# UTSW
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+utsw_pd <- pilot_data %>% 
+  filter(ri_institution == "UT Southwestern - COVE")
+
+unique_utsw <- utsw_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_utsw
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- utsw_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- utsw_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- utsw_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- utsw_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- utsw_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- utsw_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- utsw_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+# LBJ
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+lbj_pd <- pilot_data %>% 
+  filter(ri_institution == "UTH Houston - LBJ House Calls")
+
+unique_lbj <- lbj_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_lbj
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- lbj_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- lbj_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- lbj_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- lbj_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- lbj_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- lbj_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- lbj_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+# UTP
+
+## Row {height= "20%" .fill}
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+utp_pd <- pilot_data %>% 
+  filter(ri_institution == "UTH Houston - UT Physicians House Calls")
+
+unique_utp <- utp_pd %>% 
+  select(ri_patient_mrn) %>% distinct() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-blue",
+  value = unique_utp
+)
+
+# table(pilot_data$ri_institution)
+```
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+#| 
+
+started_screenings <- utp_pd %>% filter(if_any(
+  .cols = c(all_of(screening_items)),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-blue",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as a response for each of the screening items (Yes, No or Unable to assess) and status impression (Yes or No) without considering any branching logic questions. -->
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+completed_screenings <- utp_pd %>% filter(if_all(
+  .cols = c(all_of(screening_items), suspect_em),
+  .fns = ~!is.na(.x)
+)) %>% nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-blue",
+  value = completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+em_status_incomplete <- utp_pd %>% filter(if_all(
+  .cols = all_of(screening_items),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em )) %>% nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-blue",
+  value = em_status_incomplete
+)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Screening Tool Responses
+
+# Set header labels
+h_list <- list(label = "Screening Items", responses = "Responses",
+               count = "Count")
+
+si_summary <- utp_pd %>%
+  # Convert character response columns to factor columns.
+  mutate(
+    across(
+      .cols = all_of(screening_items),
+      .fns = ~factor(.x, levels = c("Yes", "No", "Unable to assess"))
+    )
+  ) %>% select(record_id, all_of(screening_items)) %>%
+  
+  # Convert to long format from long format so all screening item names are in one
+  # column and all responses are in another column
+  tidyr::pivot_longer(!record_id, names_to = "screening_items", 
+                      values_to = "responses") %>%
+  
+  # Summarize with count for each screening item response
+  reframe(
+    screening_items, responses, 
+    count = n(),
+    .by = c(screening_items, responses)
+  ) %>% distinct() %>% arrange(screening_items, responses) %>%
+  
+  # Include count for factor levels that have zero counts
+  tidyr::complete(screening_items, responses) %>%
+  mutate(count = tidyr::replace_na(count, 0)) %>%
+  
+  # Add cummulative sum and percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% paste0("%"),
+    .by = screening_items
+  ) %>% left_join(var_desc, by = c("screening_items" = "variable")) %>%
+  select(label, responses, count, Percent)
+  
+
+
+formatted_flex(si_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = si_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+```{r, echo = FALSE}
+#| title: Text Box Completion Based on Preceeding Questions
+
+# Set header labels
+h_list <- list(label = "Text box items", filled = "Filled",
+               count = "Count", totals = "Totals")
+
+environment_items <- c("ri_environment", "ri_necessities")
+
+relevant_vars <- c("ri_report", "ri_caregiver", "ri_caregiver_un_reason", screening_items, 
+  "suspect_em", "ri_environment", "r_refer_svcs", "ri_reflection", "ri_em_type_98")
+
+patient_assessment_items <- c("ri_sedated", "ri_isolated", "ri_anxious", 
+                              "ri_prohibited", "ri_unmet_needs", "ri_injuries")
+
+total_count <- utp_pd %>%
+  select(c(record_id, all_of(relevant_vars))) %>%
+  reframe(
+    ri_aps_no_reason = sum(ri_report == 0, na.rm = TRUE),
+    ri_caregiver_oth = sum(ri_caregiver == "Unable to assess" &
+                                 ri_caregiver_un_reason == 98, na.rm = TRUE),
+    ri_em_no_reason = sum(if_any(.cols = all_of(screening_items),
+                             .fns = ~.x == "Yes") & suspect_em == 0, 
+                             na.rm = TRUE),
+    ri_em_reason = sum(suspect_em == 1 & if_all(.cols = all_of(screening_items),
+                                                .fns = ~.x != "Yes"), 
+                           na.rm = TRUE),
+    ri_em_type_other = sum(ri_em_type_98 == 1, na.rm = TRUE),
+    ri_environment_un_reason = sum(if_any(.cols = all_of(environment_items),
+                                              .fns = ~.x == "Unable to assess",
+                                              na.rm = TRUE)),
+    ri_patient_assess =  sum(if_any(.cols = all_of(patient_assessment_items),
+                             .fns = ~.x == "Unable to assess"), na.rm = TRUE),
+    ri_refer_svcs_specify = sum(r_refer_svcs == 1, na.rm = TRUE),
+    ri_reflection_notes = sum(ri_reflection == 1, na.rm = TRUE)
+  ) %>% tidyr::pivot_longer(everything(), names_to = "text_box_items", 
+                      values_to = "totals") %>%
+  mutate(
+    totals = case_when(totals == 0 ~ NA,
+    TRUE ~ totals
+    )
+  )
+
+
+tb_summary <- utp_pd %>% select(record_id, all_of(text_boxes)) %>%
+  mutate(
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ case_when(
+        is.na(.x) ~ "No",
+        TRUE ~ "Yes"
+      )
+    ),
+    across(
+      .cols = all_of(text_boxes),
+      .fns = ~ factor(.x, levels = c("Yes", "No"))
+    )    
+  ) %>%
+  # Convert to long format from long format so all text box item names are in one
+  # column and all values are in another column
+  tidyr::pivot_longer(!record_id, names_to = "text_box_items", 
+                      values_to = "filled") %>%
+  # Summarize with count for each text box item
+  reframe(
+    text_box_items, filled, 
+    count = n(),
+    .by = c(text_box_items, filled)
+  ) %>% distinct() %>% arrange(text_box_items, filled) %>% 
+  left_join(total_count, by = "text_box_items") %>% 
+  group_by(text_box_items) %>%
+  mutate(
+    count = case_when(
+      n() == 1 & is.na(totals) & filled == "No" ~ totals,
+      n() == 2 & count > totals & filled == "No" ~ totals - count[1],
+      TRUE ~ count
+    ) 
+  ) %>%
+  ungroup() %>%
+  # Include count for factor levels that have zero counts
+  tidyr::complete(text_box_items, filled) %>%
+  # mutate(count = tidyr::replace_na(count, 0)) %>%
+  # Add percent
+  mutate(
+    Percent = (count/sum(count) * 100) %>% round(0) %>% 
+      tidyr::replace_na(., 0) %>% paste0("%"),
+    .by = text_box_items
+  ) %>% left_join(var_desc, by = c("text_box_items" = "variable")) %>%
+  select(label, filled, count)
+
+formatted_flex(tb_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = tb_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+
+
+```{r, echo = FALSE}
+#| title: Abuse Type Question Completion
+
+# Set header labels
+h_list <- list(label = "Suspected EM type", percent = "Percent",
+               count = "Count")
+
+
+at_summary <- utp_pd %>% select(record_id, suspect_em, all_of(em_type)) %>%
+  filter(suspect_em == 1) %>%
+  tidyr::pivot_longer(!c(record_id, suspect_em), names_to = "em_types", 
+                      values_to = "checked") %>%
+  group_by(em_types) %>%
+  reframe(
+    em_types,
+    checked,
+    total = n(),
+    count = sum(checked),
+    percent = (count/total * 100) %>% round(0) %>% paste0("%")
+  ) %>% ungroup() %>% left_join(var_desc, by = c("em_types" = "variable")) %>%
+  select(label, count, percent) %>%
+  distinct()
+ 
+
+formatted_flex(at_summary, h_list) %>% 
+  # Merge screening items column groups
+  merge_custom(x = at_summary$label, columns = 1) %>%
+  valign(j = 1, valign = "top")
+```
+

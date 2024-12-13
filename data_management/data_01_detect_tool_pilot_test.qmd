@@ -1,0 +1,153 @@
+---
+title: "Clean DETECT tool pilot study data imported from REDCap"
+---
+
+# Overview
+
+In this file, we do some initial cleaning of the DETECT tool pilot study data imported from REDCap to prepare it for dashbord summary. This pilot lasted for 2 weeks, starting on 11/11/2024 and ending on 11/25/2023.
+
+
+# Load packages
+
+```{r, message= FALSE}
+library(dplyr, warn.conflicts = FALSE)
+library(readr)
+library(purrr)
+library(stringr)
+library(janitor)
+library(here)
+```
+
+
+# Load custom functions
+
+```{r}
+source(here::here("R", "recoding_factoring_relocating.R"))
+source(here::here("R", "nums_to_na.R"))
+source(here::here("R", "data_cleaning_tools.R"))
+```
+
+
+# Load data
+
+```{r}
+tool_pilot <- read_csv(here::here("data", "detect_tool_pilot_test_raw.csv"))
+tool_pilot_labels <- read_csv(
+  here::here("data", "detect_tool_pilot_test_labels_raw.csv"))
+link_hits <- read_csv(here::here("data", "detect_tool_pilot_link_hits.csv"))
+```
+
+
+# Data cleaning
+
+Here we will convert all variable names to snake case with double underscores reduced to single underscores so that everything is uniform.
+
+```{r}
+tool_pilot <- clean_names(tool_pilot)
+```
+
+
+# Filter only data for dates relevant to the pilot
+
+```{r}
+# Create sequence of relevant dates
+dates <- c(seq(as.Date('2024-11-11'), as.Date('2024-11-25'), by = "day"))
+
+# Filter the reporting_instrument_timestamp variable to include only dates in
+# sequence
+tool_pilot <- tool_pilot %>% filter(as.Date(reporting_instrument_timestamp) %in% dates)
+```
+
+
+# Create a dataframe with variable descriptions
+
+Extract the column names from the data and labels data frames to create a data frame of variable descriptions.
+
+```{r}
+labels <- c("Record ID", "Survey Identifier", "Survey Timestamp", 
+           "Form start timestamp", "Form date", "Enter survey password", 
+           "Password verification", "Password verification", "Patient MRN", 
+           "Institution", "Baylor clinician name", "Other Baylor clinician name", 
+           "Johns Hopkins clinician name", "Other Johns Hopkins clinician name", 
+           "UCSF clinician name", "Other UCSF clinician name", 
+           "UAB clinician name", "Other UAB clinician name", 
+           "UTSW clinician name", "Other UTSW clinician name", 
+           "LBJ clinician name", "Other LBJ clinician name", 
+           "UTP clinician name", "Other UTP clinician name", "Clinician ID", 
+           "Clinician name", "Absence of necessities ", 
+           "Health or safety concern", "Environment not assessed reason", 
+           "Defensive", "Caregiver not assessed reason", 
+           "Other reason caregiver not assessed", "Chemically sedated", 
+           "Isolated", "Anxious", "Prohibited", "Unmet needs", 
+           "Unexplained injuries", "Patient not assessed reason", 
+           "Suspect EM", "Indicators observed but EM not suspected explanation", 
+           "Suspect EM explanation", "Self-neglect suspected", 
+           "Financial exploitation suspected", 
+           "Emotional or psychological abuse suspected", 
+           "Physical abuse suspected", "Sexual abuse suspected", 
+           "Caregiver neglect suspected", "Abandonment suspected", 
+           "Other mistreatment type suspected", 
+           "Dont know/ Not sure of mistreatment type", 
+           "Specified other mistreatment type suspected", 
+           "Intention to report to APS", 
+           "No intention to report to APS explanation", 
+           "Other service referral", "Specify other service", "Story", 
+           "Story note", "Complete"
+)
+
+var_desc <- data.frame(variable = names(tool_pilot),
+                       description = names(tool_pilot_labels),
+                       label = labels)
+
+```
+
+
+# Replace certain numerically coded variables with character values
+
+```{r}
+# Create a named vector with variable names and variable descriptions 
+naming_vec <- setNames(as.list(var_desc$description),
+                               var_desc$variable)
+```
+
+```{r}
+# Order of variables
+vars <- unlist(var_desc$variable)
+```
+
+
+```{r}
+screening_items <- c("ri_necessities", "ri_environment", "ri_caregiver", 
+                     "ri_sedated", "ri_isolated", "ri_anxious", "ri_prohibited", 
+                     "ri_unmet_needs", "ri_injuries")
+
+tool_pilot_labels <- tool_pilot_labels %>% rename(unlist(naming_vec)) %>% 
+  select(record_id, ri_institution, ri_clinician_bcm, ri_clinician_jh, 
+         ri_clinician_ucsf, ri_clinician_uab, ri_clinician_utsw, 
+         ri_clinician_lbj, ri_clinician_utp, all_of(screening_items))
+
+tool_pilot <- tool_pilot %>% select(-c(ri_institution, ri_clinician_bcm, ri_clinician_jh, 
+         ri_clinician_ucsf, ri_clinician_uab, ri_clinician_utsw, 
+         ri_clinician_lbj, ri_clinician_utp, all_of(screening_items))) %>% 
+  left_join(tool_pilot_labels, by = "record_id") %>%
+  # re-oder variables
+  select(all_of(vars))
+```
+
+```{r}
+link_hits <- link_hits %>% 
+  tidyr::pivot_longer(!date, names_to = "link", values_to = "hits")
+```
+
+
+```{r}
+write_rds(tool_pilot, here::here("data", "detect_tool_pilot.RDS"))
+write_rds(var_desc, here::here("data", 
+                               "detect_tool_pilot_variable_descriptions.RDS"))
+write_rds(link_hits, here::here("data", 
+                               "detect_tool_pilot_link_hits_long_format.RDS"))
+```
+
+
+
+

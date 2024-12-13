@@ -1,12 +1,5 @@
 [
   {
-    "objectID": "mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
-    "href": "mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
-    "title": "Load Packages",
-    "section": "",
-    "text": "Load Packages\n\nlibrary(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(lubridate, include.only = c(\"year\", \"month\", \"day\"))\n\nWarning: package 'lubridate' was built under R version 4.3.2\n\n\n\n# Load function for converting POSIXct dates to a Month YYYY format.\nsource(here::here(\"r\", \"month_name_year.R\"))\n\n\n\nLoad data\n\nraw_data &lt;- readRDS(here::here(\"data\", \"clinician_tracker_mock_data_raw.rds\"))\n\n\n\nAdd calculated values to raw clinician tracker data\n\ndata_com &lt;- raw_data %&gt;%\n  mutate(\n    num_completed = case_when(\n      screened == 1 ~ sample(c(sample(c(0:12), 902, replace = TRUE), rep(12, (13158-902)))),\n      TRUE          ~ NA\n      ),\n    perc_completed = (num_completed/12)*100\n  )\n\n\n# Create date column with Month YYYY format.\nclin_data &lt;- month_year(data_com, visit_date, \"month_year\") %&gt;%\n  # Calculate proportion screened and proportion of screening questions answered \n  # each month for each clinic \n  group_by(month_year, clinic_name) %&gt;%\n  mutate(\n    perc_screened_month_clinic = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),\n    perc_items_month_clinic = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)\n  ) %&gt;%\n  ungroup() %&gt;%\n  group_by(month_year, name_full_phys) %&gt;%\n  # Calculate proportion screened and proportion of screening questions answered \n  # each month for each physician\n  mutate(\n    perc_screened_month_phys = format(round((sum(screened, na.rm=TRUE)/sum(eligible, na.rm=TRUE))*100, digits = 2),nsmall=2),\n    perc_items_month_phys = format(round(mean(perc_completed, na.rm=TRUE), digits = 2),nsmall=2)\n    ) %&gt;%\n  ungroup() %&gt;%\n  # Convert NaN to NA\n  mutate(\n    across(\n      .cols = c(starts_with(\"perc_items\"), starts_with(\"perc_screened\")),\n      .fns = ~ case_when(\n        .x == NaN ~ NA,\n        TRUE      ~ .x\n      )\n    )\n  )\n\n\n\nSave data\n\n# Save clinician tracking data\nsaveRDS(clin_data, here::here(\"data\", \"clinician_tracker_mock_data_calc.rds\"))"
-  },
-  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "R33 Phase Cluster-Randomized Controlled Trial",
@@ -35,108 +28,136 @@
     "text": "Report on the progress towards recruiting goals.\nReport the fidelity of DETECT-RPC use at each of the study sites\nReport on adverse events and clinical trial stopping criteria."
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html",
+    "objectID": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
+    "href": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
+    "title": "Load Packages",
+    "section": "Split the date-time variable",
+    "text": "Split the date-time variable"
+  },
+  {
+    "objectID": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
+    "href": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
+    "title": "Load Packages",
+    "section": "Gift card data (Gift card ID, person ID and dyad ID)",
+    "text": "Gift card data (Gift card ID, person ID and dyad ID)"
+  },
+  {
+    "objectID": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
+    "href": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
+    "title": "Load Packages",
+    "section": "Join to Gift card Data",
+    "text": "Join to Gift card Data"
+  },
+  {
+    "objectID": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
+    "href": "data_management/mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
+    "title": "Load Packages",
+    "section": "Create column of the overall responses",
+    "text": "Create column of the overall responses"
+  },
+  {
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html",
     "title": "Clinician Screening Tracker Data",
     "section": "",
-    "text": "Total patients seen by clinicians: 8003 Total eligible appointments: 9121\nTotal screened appointments: 5210 Total screened patients that will be contacted for recruitment: 4863 Total recruited patients that will be interviewed: 180\nThe details for the variables created using this file are contained here: https://uthtmc.sharepoint.com/:w:/r/sites/SPHDETECT-RPC/Shared%20Documents/DETECT-RPC%20R61%20R33%202022/0_data_folders/02_dashboards/00_documentation/03_r33_dashboards_implementation_planning_notes.docx.docx?d=we1c72482657342aea35ede2de4e980a0&csf=1&web=1&e=nUY12K\nlibrary(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(tidyr, include.only = c(\"separate_wider_delim\", \"crossing\"))\n\nWarning: package 'tidyr' was built under R version 4.3.2\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(randomNames)\n\nWarning: package 'randomNames' was built under R version 4.3.3\n\nlibrary(generator, include.only = \"r_phone_numbers\")\n\nWarning: package 'generator' was built under R version 4.3.3"
+    "text": "Total patients seen by clinicians: 8003 Total eligible appointments: 9121\nTotal screened appointments: 5210 Total screened patients that will be contacted for recruitment: 4863 Total recruited patients that will be interviewed: 180\nThe details for the variables created using this file are contained here: https://uthtmc.sharepoint.com/:w:/r/sites/SPHDETECT-RPC/Shared%20Documents/DETECT-RPC%20R61%20R33%202022/0_data_folders/02_dashboards/00_documentation/03_r33_dashboards_implementation_planning_notes.docx.docx?d=we1c72482657342aea35ede2de4e980a0&csf=1&web=1&e=nUY12K"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#unique-mrns-and-dyad-ids",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#unique-mrns-and-dyad-ids",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#unique-mrns-and-dyad-ids",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#unique-mrns-and-dyad-ids",
     "title": "Clinician Screening Tracker Data",
     "section": "Unique MRNs and Dyad IDs",
-    "text": "Unique MRNs and Dyad IDs\n\n# Dyad IDs\nset.seed(123)\ndyad_id &lt;- ids::random_id(8003, 3)\n\n\n# Combine MRNs and Dyad IDs\nmrn_dyad_ids &lt;- data.frame(mrn, dyad_id, mrn_dyad_join = c(1:8003))\n\n\n# MRN Dyad join column for full mock data\n\nset.seed(1)\nmrn_dyad_join_data &lt;- sample(\n  c(1:8003, sample(c(1:8003), size = (13158 - 8003), replace = TRUE)))"
+    "text": "Unique MRNs and Dyad IDs"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#visit-dates",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#visit-dates",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#visit-dates",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#visit-dates",
     "title": "Clinician Screening Tracker Data",
     "section": "Visit dates",
     "text": "Visit dates"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#physician-and-clinics",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#physician-and-clinics",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#physician-and-clinics",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#physician-and-clinics",
     "title": "Clinician Screening Tracker Data",
     "section": "Physician and clinics",
-    "text": "Physician and clinics\n\n# Physician join column for full mock data\n\nset.seed(2)\nphys_join_data &lt;- sample(\n  c(1:68, sample(c(1:68), size = (13158 - 68), replace = TRUE)))"
+    "text": "Physician and clinics"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#screened-assignments",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#screened-assignments",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#screened-assignments",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#screened-assignments",
     "title": "Clinician Screening Tracker Data",
     "section": "Screened assignments",
-    "text": "Screened assignments\n\nset.seed(23)\n# 2906 of all 5087 eligible patients are screened\nscreened_op &lt;- sample(c(rep(1, 2001), sample(c(0,1), size = 11157, replace = TRUE)))"
+    "text": "Screened assignments"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-full-mock-data-set",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-full-mock-data-set",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-full-mock-data-set",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-full-mock-data-set",
     "title": "Clinician Screening Tracker Data",
     "section": "Create full mock data set",
-    "text": "Create full mock data set\n\nAdd ids, clinician data and appointment times\n\n\nAdd eligibility and screened status\n\nclin_data &lt;- data_app %&gt;% \n  group_by(mrn) %&gt;%\n  arrange(visit_date) %&gt;%\n  mutate(\n    visit_no = row_number(),\n    # Arbitrarily assign eligibility for alternating visits (odd vs even)\n    eligible = case_when(\n      visit_no %% 2 == 1  ~ 1,\n      visit_no %% 2 == 0  ~ 0\n    )\n  ) %&gt;% \n  ungroup() %&gt;%\n  mutate(\n    screened = case_when(\n      eligible == 1 ~ screened_op,\n      TRUE          ~ NA\n    )\n  )"
+    "text": "Create full mock data set\n\nAdd ids, clinician data and appointment times\n\n\nAdd eligibility and screened status"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#screened-patients-to-be-recruited",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#screened-patients-to-be-recruited",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#screened-patients-to-be-recruited",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#screened-patients-to-be-recruited",
     "title": "Clinician Screening Tracker Data",
     "section": "Screened Patients to be Recruited",
-    "text": "Screened Patients to be Recruited\n\n# Create call date times (weekdays only)\ndates &lt;- data.frame(dates = seq(as.Date('2026-09-01'), as.Date('2027-05-30'), by = \"day\")) \ntimes &lt;- c(paste0(9:17, \":00:00\"), paste0(9:17, \":30:00\"), paste0(9:17, \":15:00\"))\n\nweekends &lt;- c(\"Saturday\", \"Sunday\")\n\n# create combinations of data and time, de-duplicate and sort\ncall_date_time &lt;- tidyr::crossing(dates, data.frame(times)) %&gt;% \n  mutate(\n    call_date_time = as.POSIXct(paste0(dates, times))\n  ) %&gt;% select(call_date_time) %&gt;%\n  # Filter out weekends\n  filter(!weekdays(call_date_time) %in% weekends) %&gt;%\n  slice(1:rec_n) %&gt;%\n  mutate(\n    join_id = 1:rec_n\n)"
+    "text": "Screened Patients to be Recruited"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-recruiter-ids",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-recruiter-ids",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-recruiter-ids",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-recruiter-ids",
     "title": "Clinician Screening Tracker Data",
     "section": "Create recruiter IDs",
-    "text": "Create recruiter IDs\n\nall_rec &lt;- paste0(\"rec\", 1:4)\n\nrec_id &lt;- sample(c(rep(all_rec, 60), sample(x = all_rec, size = (rec_n-240), replace = TRUE)))\n\n\nrec_data &lt;- scr_pat %&gt;% right_join(., call_date_time, by = 'join_id') %&gt;%\n  mutate(\n    rec_id = rec_id\n  ) %&gt;% arrange(call_date_time)"
+    "text": "Create recruiter IDs"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-mock-data-for-each-call-log-variable",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-mock-data-for-each-call-log-variable",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-mock-data-for-each-call-log-variable",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-mock-data-for-each-call-log-variable",
     "title": "Clinician Screening Tracker Data",
     "section": "Create mock data for each call log variable",
-    "text": "Create mock data for each call log variable\n\nsample_op &lt;- function(options){\n  sample(options, size = rec_n, replace = TRUE)\n}\n\n\n# Answered status\nset.seed(4)\nanswered &lt;- sample(c(rep(\"No answer/ busy sign\", 750), rep(\"Participant answered\", 953), rep(\"Voicemail\", 904),\n              rep(\"Wrong number\", 124), rep(\"Someone else answered\", 753)), size = rec_n, replace = TRUE)\n\n# Phone numbers\nset.seed(3)\nparticipant_phone_number &lt;- r_phone_numbers(n = rec_n)\n\n# Text box mock entries\nset.seed(1)\nother_op &lt;- sample(c(paste0(\"Some explanation_\",1:10 ), paste0(\"Another explanation_\", 1:18),                        \n                     paste0(\"A different explanation_\", 1:7)), size = rec_n, replace = TRUE)\n\n# Comments mock entries\nset.seed(2)\ncomments &lt;- sample(c(paste0(\"Some comment_\",1:10 ), paste0(\"Another comment_\", 1:18), \n                      paste0(\"A different comment_\", 1:7), rep(NA, 3005)), size = rec_n, replace = TRUE)\n\n\nset.seed(1)\ncall_data &lt;- data.frame(rec_data, participant_phone_number, answered) %&gt;%\n  mutate(\n    left_message = case_when(\n      answered == \"No answer/ busy sign\" ~ sample_op(\n        c(\"Left message\", \"Unable to leave message\")), \n      answered == \"Voicemail\"            ~ sample_op(\n        c(\"Left message\", \"Unable to leave message\")),\n      TRUE                               ~ NA\n    ),\n    no_message = case_when(\n      left_message == \"Unable to leave message\" ~ sample_op(\n        c(\"Voicemail box is full\", \"No voicemail box set up\", \"Other\")),\n      TRUE                 ~ NA\n    ),\n    no_message_other = case_when(\n      no_message == \"Other\" ~ other_op,\n      TRUE                  ~ NA\n    ),\n    answered_someone_else = case_when(\n      answered == \"Someone else answered\" ~ sample_op(\n        c(\"A spouse or partner\", \"An ex spouse or partner\", \n          \"A parent or step-parent\",\n          \"A brother or sister\", \"A son or daughter\", \"Another relative\", \n          \"A coworker\", \"A neighbor\", \"A friend\", \"Some other non-relative\", \n          \"Don’t know\")\n      ),\n      TRUE                                ~ NA\n    ),\n    participant_contacted = case_when(\n      answered == \"Someone else answered\" ~ sample_op(\n        c(\"Participant contacted\", \"Participant not contacted\")),\n      TRUE                                ~ NA\n    ),\n    pc_no_result = case_when(\n      participant_contacted == \"Participant not contacted\" ~ sample_op(\n        c(\"Scheduled call back\", \"Unable to schedule callback\")\n      ),\n      TRUE                          ~ NA\n    ),\n    call_back_date_time = case_when(\n      pc_no_result == \"Scheduled call back\" ~ call_date_time + lubridate::days(2),\n      TRUE                                  ~ NA\n    ),\n    # Remove weekends\n    call_back_date_time = case_when(weekdays(call_back_date_time) %in% weekends ~ \n      call_back_date_time + lubridate::days(2),\n      TRUE ~ call_back_date_time),\n    call_back_phone_number = case_when(\n      pc_no_result == \"Scheduled call back\" ~ participant_phone_number,\n      TRUE                                  ~ NA \n    ),\n    call_back_no = case_when(\n      pc_no_result == \"Unable to schedule callback\" ~ sample_op(\n        c(\"Person refused\", \"Language barrier\", \"Person hung up\",\n          \"Participant impaired or disabled\", \"Participant deceased\",\n          \"Participant not available\", \"Other\")\n      ),\n      TRUE                                          ~ NA\n    ),\n    call_back_no_other = case_when(\n      call_back_no == \"Other\" ~ other_op,\n      TRUE                    ~ NA\n    ),\n    pc_yes_result = case_when(\n      answered == \"Participant answered\" | \n        participant_contacted == \"Participant contacted\" ~ \n        sample_op(\n          c(\"Interview scheduled\", \"Interview not scheduled\")\n        )\n    ),\n    interview_not_scheduled = case_when(\n      pc_yes_result == \"Interview not scheduled\" ~ sample_op(\n        c(\"Participant refused/ hung up\", \"Participant is not eligible\")\n      ),\n      TRUE                                       ~ NA\n    ),\n    ineligible = case_when(\n      interview_not_scheduled == \"Participant is not eligible\" ~ sample_op(\n        c(\"Cannot speak/read English or Spanish\", \n          \"Unwilling/unable to give consent\")\n      ),\n      TRUE                                                     ~ NA\n    ),\n    comments = comments\n  ) %&gt;% select(-c(join_id))"
+    "text": "Create mock data for each call log variable"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-a-df-with-1800-unique-participants",
-    "href": "mock_data_creation_and_analysis/01_mock_data_creation.html#create-a-df-with-1800-unique-participants",
+    "objectID": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-a-df-with-1800-unique-participants",
+    "href": "data_management/mock_data_creation_and_analysis/01_mock_data_creation.html#create-a-df-with-1800-unique-participants",
     "title": "Clinician Screening Tracker Data",
     "section": "Create a df with 1800 unique participants",
-    "text": "Create a df with 1800 unique participants\n\n360 is 20% of this\nEach participant in a previous call log was called an average of 1.7 times.\n\n\n# Split the data in half so that the first half has 1800 patients and a sample of the second half will have 1260\nsecond_call &lt;- call_data %&gt;%\n  mutate(\n    second_call = case_when(\n      pc_no_result == \"Scheduled call back\" ~ 1,\n      answered == \"No answer/ busy sign\"    ~ 1,\n      TRUE                                  ~ 0\n    )\n  )\n\n# Filter 1260 participants for a second call and 540 of that (1800 - 1260) for only one call.\nset.seed(6)\nscall_y &lt;- second_call %&gt;% filter(second_call == 1) %&gt;% slice_sample(n = 1260)\nscall_n &lt;- second_call %&gt;% filter(second_call == 0) %&gt;% slice_sample(n = 540) \n\n# Dyad_ids for participants that will receive a second call\nscall_y_id &lt;- scall_y %&gt;% select(dyad_id, call_back_date_time, call_date_time) %&gt;% \n  rename(new_id = dyad_id, \n         new_call_time = call_back_date_time,\n         first_call_time = call_date_time)\n\n# Calls that will be converted to second calls\nyes_call &lt;- second_call %&gt;% \n  filter(second_call == 0 & !(dyad_id %in% scall_n$dyad_id)) %&gt;% \n  slice_sample(n = 1260) %&gt;% cbind(., scall_y_id) %&gt;%\n  # Set call time to be call back time of first call and set new id to dyad id\n  mutate(\n    dyad_id = new_id,\n    call_date_time = case_when(\n      is.na(new_call_time) == FALSE ~ new_call_time,\n      TRUE                          ~ first_call_time + lubridate::days(3)\n    ),\n    # Remove weekends\n    call_date_time = case_when(weekdays(call_date_time) %in% weekends ~ \n      call_date_time + lubridate::days(2),\n      TRUE ~ call_date_time)\n  ) %&gt;%\n  select(-c(new_id, new_call_time, first_call_time))\n  \n\nrec_raw_data &lt;- rbind(scall_y, scall_n, yes_call) %&gt;% arrange(call_date_time) %&gt;% select(-c(second_call))"
+    "text": "Create a df with 1800 unique participants\n\n360 is 20% of this\nEach participant in a previous call log was called an average of 1.7 times."
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html",
+    "objectID": "data_management/data_01_detect_tool_pilot_test.html",
+    "href": "data_management/data_01_detect_tool_pilot_test.html",
+    "title": "Clean DETECT tool pilot study data imported from REDCap",
+    "section": "",
+    "text": "Overview\nIn this file, we do some initial cleaning of the DETECT tool pilot study data imported from REDCap to prepare it for dashbord summary. This pilot lasted for 2 weeks, starting on 11/11/2024 and ending on 11/25/2023.\n\n\nLoad packages\n\nlibrary(dplyr, warn.conflicts = FALSE)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\nlibrary(readr)\n\nWarning: package 'readr' was built under R version 4.3.2\n\nlibrary(purrr)\n\nWarning: package 'purrr' was built under R version 4.3.2\n\nlibrary(stringr)\n\nWarning: package 'stringr' was built under R version 4.3.2\n\nlibrary(janitor)\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\n\n\nLoad custom functions\n\nsource(here::here(\"R\", \"recoding_factoring_relocating.R\"))\nsource(here::here(\"R\", \"nums_to_na.R\"))\nsource(here::here(\"R\", \"data_cleaning_tools.R\"))\n\n\n\nLoad data\n\ntool_pilot &lt;- read_csv(here::here(\"data\", \"detect_tool_pilot_test_raw.csv\"))\n\nRows: 36 Columns: 59\n── Column specification ────────────────────────────────────────────────────────\nDelimiter: \",\"\nchr   (8): reporting_instrument_timestamp, password_entry, ri_patient_mrn, r...\ndbl  (35): record_id, password_verification, password_incorrect___1, ri_inst...\nlgl  (14): redcap_survey_identifier, ri_clinician_bcm_oth, ri_clinician_jh, ...\ndttm  (1): ri_timestamp_start\ndate  (1): ri_date\n\nℹ Use `spec()` to retrieve the full column specification for this data.\nℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.\n\ntool_pilot_labels &lt;- read_csv(\n  here::here(\"data\", \"detect_tool_pilot_test_labels_raw.csv\"))\n\nRows: 36 Columns: 59\n── Column specification ────────────────────────────────────────────────────────\nDelimiter: \",\"\nchr  (39): Survey Timestamp, Enter survey password, Correct password has not...\ndbl   (4): Record ID, Password verification, Clinician ID, Clinician name\nlgl  (14): Survey Identifier, Specify other Baylor clinician name, Johns Hop...\ndttm  (1): Form start timestamp\ndate  (1): Form date\n\nℹ Use `spec()` to retrieve the full column specification for this data.\nℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.\n\nlink_hits &lt;- read_csv(here::here(\"data\", \"detect_tool_pilot_link_hits.csv\"))\n\nRows: 15 Columns: 6\n── Column specification ────────────────────────────────────────────────────────\nDelimiter: \",\"\nchr (1): date\ndbl (5): elder_abuse_definitions, detect_al, detect_ca, detect_md, detect_tx\n\nℹ Use `spec()` to retrieve the full column specification for this data.\nℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.\n\n\n\n\nData cleaning\nHere we will convert all variable names to snake case with double underscores reduced to single underscores so that everything is uniform.\n\ntool_pilot &lt;- clean_names(tool_pilot)\n\n\n\nFilter only data for dates relevant to the pilot\n\n# Create sequence of relevant dates\ndates &lt;- c(seq(as.Date('2024-11-11'), as.Date('2024-11-25'), by = \"day\"))\n\n# Filter the reporting_instrument_timestamp variable to include only dates in\n# sequence\ntool_pilot &lt;- tool_pilot %&gt;% filter(as.Date(reporting_instrument_timestamp) %in% dates)\n\n\n\nCreate a dataframe with variable descriptions\nExtract the column names from the data and labels data frames to create a data frame of variable descriptions.\n\nlabels &lt;- c(\"Record ID\", \"Survey Identifier\", \"Survey Timestamp\", \n           \"Form start timestamp\", \"Form date\", \"Enter survey password\", \n           \"Password verification\", \"Password verification\", \"Patient MRN\", \n           \"Institution\", \"Baylor clinician name\", \"Other Baylor clinician name\", \n           \"Johns Hopkins clinician name\", \"Other Johns Hopkins clinician name\", \n           \"UCSF clinician name\", \"Other UCSF clinician name\", \n           \"UAB clinician name\", \"Other UAB clinician name\", \n           \"UTSW clinician name\", \"Other UTSW clinician name\", \n           \"LBJ clinician name\", \"Other LBJ clinician name\", \n           \"UTP clinician name\", \"Other UTP clinician name\", \"Clinician ID\", \n           \"Clinician name\", \"Absence of necessities \", \n           \"Health or safety concern\", \"Environment not assessed reason\", \n           \"Defensive\", \"Caregiver not assessed reason\", \n           \"Other reason caregiver not assessed\", \"Chemically sedated\", \n           \"Isolated\", \"Anxious\", \"Prohibited\", \"Unmet needs\", \n           \"Unexplained injuries\", \"Patient not assessed reason\", \n           \"Suspect EM\", \"Indicators observed but EM not suspected explanation\", \n           \"Suspect EM explanation\", \"Self-neglect suspected\", \n           \"Financial exploitation suspected\", \n           \"Emotional or psychological abuse suspected\", \n           \"Physical abuse suspected\", \"Sexual abuse suspected\", \n           \"Caregiver neglect suspected\", \"Abandonment suspected\", \n           \"Other mistreatment type suspected\", \n           \"Dont know/ Not sure of mistreatment type\", \n           \"Specified other mistreatment type suspected\", \n           \"Intention to report to APS\", \n           \"No intention to report to APS explanation\", \n           \"Other service referral\", \"Specify other service\", \"Story\", \n           \"Story note\", \"Complete\"\n)\n\nvar_desc &lt;- data.frame(variable = names(tool_pilot),\n                       description = names(tool_pilot_labels),\n                       label = labels)\n\n\n\nReplace certain numerically coded variables with character values\n\n# Create a named vector with variable names and variable descriptions \nnaming_vec &lt;- setNames(as.list(var_desc$description),\n                               var_desc$variable)\n\n\n# Order of variables\nvars &lt;- unlist(var_desc$variable)\n\n\nscreening_items &lt;- c(\"ri_necessities\", \"ri_environment\", \"ri_caregiver\", \n                     \"ri_sedated\", \"ri_isolated\", \"ri_anxious\", \"ri_prohibited\", \n                     \"ri_unmet_needs\", \"ri_injuries\")\n\ntool_pilot_labels &lt;- tool_pilot_labels %&gt;% rename(unlist(naming_vec)) %&gt;% \n  select(record_id, ri_institution, ri_clinician_bcm, ri_clinician_jh, \n         ri_clinician_ucsf, ri_clinician_uab, ri_clinician_utsw, \n         ri_clinician_lbj, ri_clinician_utp, all_of(screening_items))\n\ntool_pilot &lt;- tool_pilot %&gt;% select(-c(ri_institution, ri_clinician_bcm, ri_clinician_jh, \n         ri_clinician_ucsf, ri_clinician_uab, ri_clinician_utsw, \n         ri_clinician_lbj, ri_clinician_utp, all_of(screening_items))) %&gt;% \n  left_join(tool_pilot_labels, by = \"record_id\") %&gt;%\n  # re-oder variables\n  select(all_of(vars))\n\n\nlink_hits &lt;- link_hits %&gt;% \n  tidyr::pivot_longer(!date, names_to = \"link\", values_to = \"hits\")\n\n\nwrite_rds(tool_pilot, here::here(\"data\", \"detect_tool_pilot.RDS\"))\nwrite_rds(var_desc, here::here(\"data\", \n                               \"detect_tool_pilot_variable_descriptions.RDS\"))\nwrite_rds(link_hits, here::here(\"data\", \n                               \"detect_tool_pilot_link_hits_long_format.RDS\"))"
+  },
+  {
+    "objectID": "data_management/mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
+    "href": "data_management/mock_data_creation_and_analysis/02_clinician_tracker_data_analysis.html",
     "title": "Load Packages",
     "section": "",
-    "text": "library(dplyr)\n\nWarning: package 'dplyr' was built under R version 4.3.3\n\n\n\nAttaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\nlibrary(here)\n\nWarning: package 'here' was built under R version 4.3.3\n\n\nhere() starts at C:/Users/ebiek/OneDrive - UTHealth Houston/Cannell lab/r33_dashboards\n\nlibrary(ids)\n\nWarning: package 'ids' was built under R version 4.3.3\n\nlibrary(lubridate, include.only = c(\"year\", \"month\", \"day\", \"hour\"))\n\nWarning: package 'lubridate' was built under R version 4.3.2\n\n\n\n# Load function for converting POSIXct dates to a Month YYYY format.\nsource(here::here(\"r\", \"month_name_year.R\"))"
+    "text": "Load Packages\n\n\nLoad data\n\n\nAdd calculated values to raw clinician tracker data\n\n\nSave data"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#split-the-date-time-variable",
+    "objectID": "data_management/mock_data_creation_and_analysis/04_screening_tool_mock_data.html#create-mock-data-for-each-call-log-variable",
+    "href": "data_management/mock_data_creation_and_analysis/04_screening_tool_mock_data.html#create-mock-data-for-each-call-log-variable",
     "title": "Load Packages",
-    "section": "Split the date-time variable",
-    "text": "Split the date-time variable\n\ndate_time &lt;- raw_data %&gt;% \n  mutate(\n    call_hour = lubridate::hour(call_date_time),\n    call_hour_f = factor(call_hour, \n      labels = c(\"9-9:59\", \"10-10:59\", \"11-11:59\", \"12-12:59\", \"13-13:59\", \n                 \"14-14:59\", \"15-15:59\", \"16-16:59\", \"17\")\n      ),\n    call_day = weekdays(as.Date(call_date_time)),\n    call_day = factor(call_day,\n                      levels = c(\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\")),\n    call_date = as.Date(call_date_time)\n    )%&gt;%\n      month_year(call_date_time, \"call_month_yr\") %&gt;%\n      relocate(c(call_month_yr, call_date, call_day, call_hour, call_hour_f), \n               .after = \"call_date_time\")"
+    "section": "Create mock data for each call log variable",
+    "text": "Create mock data for each call log variable"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#gift-card-data-gift-card-id-person-id-and-dyad-id",
+    "objectID": "data_management/mock_data_creation_and_analysis/04_screening_tool_mock_data.html#create-options",
+    "href": "data_management/mock_data_creation_and_analysis/04_screening_tool_mock_data.html#create-options",
     "title": "Load Packages",
-    "section": "Gift card data (Gift card ID, person ID and dyad ID)",
-    "text": "Gift card data (Gift card ID, person ID and dyad ID)\n\nset.seed(56)\ngift_card &lt;- date_time %&gt;% select(dyad_id, pc_yes_result) %&gt;% filter(pc_yes_result == \"Interview scheduled\") %&gt;% slice_sample(n = 180) %&gt;%\n  mutate(\n    gift_card_id = ids::random_id(nrow(.), 5)\n  ) %&gt;% select(-c(pc_yes_result))"
+    "section": "Create options",
+    "text": "Create options"
   },
   {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#join-to-gift-card-data",
+    "objectID": "data_management/mock_data_creation_and_analysis/04_screening_tool_mock_data.html#create-options-1",
+    "href": "data_management/mock_data_creation_and_analysis/04_screening_tool_mock_data.html#create-options-1",
     "title": "Load Packages",
-    "section": "Join to Gift card Data",
-    "text": "Join to Gift card Data\n\nrec_sch_gift &lt;- date_time %&gt;% left_join(., gift_card, by = \"dyad_id\")"
-  },
-  {
-    "objectID": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
-    "href": "mock_data_creation_and_analysis/03_recruiter_scheduling_data_calc.html#create-column-of-the-overall-responses",
-    "title": "Load Packages",
-    "section": "Create column of the overall responses",
-    "text": "Create column of the overall responses\n\noverall_response &lt;- rec_sch_gift %&gt;%\n  mutate(\n    overall_response = coalesce(interview_not_scheduled, pc_yes_result,\n    call_back_no, pc_no_result, no_message, left_message, answered)\n  )"
+    "section": "Create options",
+    "text": "Create options"
   }
 ]

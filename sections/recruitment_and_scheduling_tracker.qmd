@@ -342,8 +342,11 @@ plot_ly(
   )
 ```
 
+
 # Call Timing {orientation="columns"}
+
 ## Column
+
 ```{r}
 formatted_flex <- function(df, header_list){
   df %>% flextable() %>%
@@ -485,6 +488,8 @@ ggplotly(time_day_plot, tooltip = c("text"), textposition = "center") %>%
   layout(hoverlabel = list(align="left")
          )
 ```
+
+
 # Call Responses
 
 ```{r, echo = FALSE}

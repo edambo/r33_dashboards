@@ -1,0 +1,96 @@
+
+
+# Load Packages
+
+```{r}
+library(dplyr)
+library(here)
+library(ids)
+library(lubridate, include.only = c("year", "month", "day"))
+```
+
+```{r}
+# Load function for converting POSIXct dates to a Month YYYY format.
+source(here::here("r", "month_name_year.R"))
+```
+
+
+# Load data
+
+```{r}
+raw_dyad_data <- readRDS(here::here("data", "clinician_tracker_mock_data_raw.rds"))
+```
+# Create new variables to match actual raw data
+
+```{r}
+actual_mock <- raw_dyad_data %>%
+  # select only rows where patients are eligible
+  filter(screened == 1) %>%
+  # Create record id column
+  mutate(
+    record_id = dplyr::row_number()
+  ) %>%
+  # Select relevant variables 
+  select(record_id, mrn, visit_date, clinic_name, name_full_phys) %>%
+  # Create the ri_institution variable
+  mutate(
+    ri_institution = case_when(
+      clinic_name == "Baylor"        ~ 1,
+      clinic_name == "Johns Hopkins" ~ 2,
+      clinic_name == "UCSF"          ~ 3,
+      clinic_name == "UAB"           ~ 4,
+      clinic_name == "UTSW"          ~ 5,
+      clinic_name == "LBJ"           ~ 6,
+      clinic_name == "UT Physicians" ~ 7
+    )
+  ) %>%
+  # Rename some variables to match screening tool variable names
+  rename(
+    ri_patient_mrn = mrn,
+    ri_date = visit_date
+  )
+```
+
+
+# Create randomly generated data for the other variables
+
+## Create mock data for each call log variable
+```{r}
+st_n <- nrow(actual_mock)
+
+sample_op <- function(options){
+  sample(options, size = st_n, replace = TRUE)
+}
+```
+
+## Create options
+
+```{r}
+ri_clinician_bcm_op <- c(103, 104, 105, 106)
+ri_clinician_jh_op <- c(207, 212)
+ri_clinician_ucsf_op <- c(301, 302, 305, 311, 317, 320)
+ri_clinician_uab_op <- c(404, 406, 410, 402, 411, 412)
+ri_clinician_utsw_op <- c(501, 506, 508, 503)
+ri_clinician_lbj_op <- c(602, 603, 609, 613, 614, 701)
+ri_clinician_utp_op <- c(702, 703, 705, 701)
+```
+
+
+
+## Create options
+
+```{r, eval=FALSE}
+ri_clinician_bcm <- 
+ri_clinician_bcm_oth <-
+ri_clinician_jh <-
+ri_clinician_jh_oth <-
+ri_clinician_ucsf <-
+ri_clinician_ucsf_oth <-
+ri_clinician_uab <-
+ri_clinician_uab_oth <-
+ri_clinician_uab <-
+ri_clinician_uab_oth <-
+```
+
+
+

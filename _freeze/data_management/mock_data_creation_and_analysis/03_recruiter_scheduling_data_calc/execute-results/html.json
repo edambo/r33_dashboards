@@ -1,0 +1,15 @@
+{
+  "hash": "5509cac41d0c8cb3c12b9b6f2bf8cdd8",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Load Packages\n\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n\n# Load data\n\n\n::: {.cell}\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"Tuesday\"   \"Wednesday\" \"Thursday\"  \"Friday\"    \"Monday\"   \n```\n\n\n:::\n:::\n\n\n\n## Split the date-time variable\n\n\n::: {.cell}\n\n:::\n\n\n\n## Gift card data (Gift card ID, person ID and dyad ID)\n\n\n::: {.cell}\n\n:::\n\n\n\n## Join to Gift card Data\n\n\n::: {.cell}\n\n:::\n\n\n\n## Create column of the overall responses\n\n\n::: {.cell}\n\n:::\n\n\n\n# Save data\n\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
