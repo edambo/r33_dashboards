@@ -11,3 +11,4 @@ data/
 .rds
 .xlsx
 .DS_Store
+/.quarto/

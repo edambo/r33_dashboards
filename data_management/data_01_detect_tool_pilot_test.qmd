@@ -4,7 +4,7 @@ title: "Clean DETECT tool pilot study data imported from REDCap"
 
 # Overview
 
-In this file, we do some initial cleaning of the DETECT tool pilot study data imported from REDCap to prepare it for dashbord summary. This pilot lasted for 2 weeks, starting on 11/11/2024 and ending on 11/25/2023.
+In this file, we do some initial cleaning of the DETECT tool pilot study data imported from REDCap to prepare it for dashboard summary. This pilot lasted for 2 weeks, starting on 11/11/2024 and ending on 11/25/2023.
 
 
 # Load packages
@@ -30,20 +30,428 @@ source(here::here("R", "data_cleaning_tools.R"))
 
 # Load data
 
-```{r}
-tool_pilot <- read_csv(here::here("data", "detect_tool_pilot_test_raw.csv"))
+```{r, message=FALSE}
+# Raw data with numerically coded values
+tool_pilot_raw <- read_csv(here::here("data", "detect_tool_pilot_test_raw.csv"))
+
+# Data labels
 tool_pilot_labels <- read_csv(
   here::here("data", "detect_tool_pilot_test_labels_raw.csv"))
+
+# Link data
 link_hits <- read_csv(here::here("data", "detect_tool_pilot_link_hits.csv"))
 ```
 
 
-# Data cleaning
+# Column name cleaning
 
 Here we will convert all variable names to snake case with double underscores reduced to single underscores so that everything is uniform.
 
 ```{r}
-tool_pilot <- clean_names(tool_pilot)
+tool_pilot_raw <- clean_names(tool_pilot_raw) %>% 
+  rename(ri_refer_svcs = r_refer_svcs,
+         ri_clinician_id = ri_clinician_id_2)
+```
+
+
+# Create a dataframe with variable descriptions
+
+Extract the column names from the data and labels data frames to create a data frame of variable descriptions.
+
+```{r}
+# Create list of shortened variable labels based on the descriptions/ original questions
+labels <- c("Record ID", "Survey Identifier", "Survey Timestamp", 
+           "Form start timestamp", "Form date", "Enter survey password", 
+           "Password verification", "Password verification", "Patient MRN", 
+           "Institution", "Institution", "Institution", "Baylor clinician name", 
+           "Other Baylor clinician name", "Johns Hopkins clinician name", 
+           "Other Johns Hopkins clinician name", "UCSF clinician name",
+           "Other UCSF clinician name", "UAB clinician name", 
+           "Other UAB clinician name", "UTSW clinician name", 
+           "Other UTSW clinician name", "LBJ clinician name", 
+           "Other LBJ clinician name", "UTP clinician name", 
+           "Other UTP clinician name", "Clinician ID", "Clinician name", 
+           "Absence of necessities ", "Environment health or safety concern", 
+           "Environment not assessed reason", "Defensive", 
+           "Caregiver not assessed reason", "Other reason caregiver not assessed",
+           "Chemically sedated", "Isolated", "Anxious", "Prohibited", "Unmet needs", 
+           "Unexplained injuries", "Patient not assessed reason", 
+           "Suspect EM", "Indicators observed but EM not suspected reason", 
+           "Suspect EM reason", "Self-neglect suspected", 
+           "Financial exploitation suspected", 
+           "Emotional or psychological abuse suspected", 
+           "Physical abuse suspected", "Sexual abuse suspected", 
+           "Caregiver neglect suspected", "Abandonment suspected", 
+           "Other mistreatment type suspected", 
+           "Dont know/ Not sure of mistreatment type", 
+           "Specific other mistreatment type suspected", 
+           "Intend to report to APS", "No intention to report to APS reason", 
+           "Other service referral", "Specify other service", 
+           "Have helpful details", "Brief note", "Complete"
+)
+
+# Combine the variable names, descriptions and labels into a dataframe
+var_desc <- data.frame(variable = names(tool_pilot_raw),
+                       description = names(tool_pilot_labels),
+                       label = labels) %>%
+  mutate(id = row_number())
+var_desc
+```
+
+
+# Replace labels with variable names in the label data frame
+
+```{r}
+# Create a named vector with variable names and variable descriptions 
+naming_vec <- setNames(as.list(var_desc$description),
+                               var_desc$variable)
+
+# Rename the variables using the vector
+tool_pilot <- tool_pilot_labels %>% rename(unlist(naming_vec))
+```
+
+
+# Create new variables
+
+## Replace reporting instument timestamp variable with timestamp end variable
+
+The `reporting_instrument_timestamp` variable contains information on both the submission time and the completion status of each survey response. The variable `reporting_instrument_complete` also provides completion status information. A new variable will be created that only contains the sumbmission time and the reporting_instrument_timestamp variable will be removed.
+
+```{r}
+tool_pilot <- tool_pilot %>% 
+  mutate(
+    timestamp_end = case_when(
+      is.na(reporting_instrument_timestamp) ~ NA,
+      reporting_instrument_timestamp == "[not completed]" ~ NA,
+      TRUE ~ reporting_instrument_timestamp
+    ),
+    timestamp_end = as.POSIXct(timestamp_end, tz = "UTC")
+  ) %>% relocate(c(timestamp_end, reporting_instrument_complete),
+                 .after = ri_timestamp_start) %>%
+  select(-c(reporting_instrument_timestamp))
+```
+
+## Clinician names
+
+```{r}
+clinician_names <- c("ri_clinician_bcm", "ri_clinician_bcm_oth", 
+                     "ri_clinician_jh", "ri_clinician_jh_oth", 
+                     "ri_clinician_ucsf", "ri_clinician_ucsf_oth", 
+                     "ri_clinician_uab", "ri_clinician_uab_oth", 
+                     "ri_clinician_utsw", "ri_clinician_utsw_oth", 
+                     "ri_clinician_lbj", "ri_clinician_lbj_oth", 
+                     "ri_clinician_utp", "ri_clinician_utp_oth")
+
+tool_pilot <- tool_pilot %>% 
+  mutate(
+    ri_clinician_id_name = coalesce(ri_clinician_utp_oth, ri_clinician_utp, 
+                                     ri_clinician_lbj_oth, ri_clinician_lbj, 
+                                     ri_clinician_utsw_oth, ri_clinician_utsw, 
+                                     ri_clinician_uab_oth, ri_clinician_uab, 
+                                     ri_clinician_ucsf_oth, ri_clinician_ucsf, 
+                                     ri_clinician_jh_oth, ri_clinician_jh, 
+                                     ri_clinician_bcm_oth, ri_clinician_bcm)
+    ) %>% select(-c(all_of(clinician_names))) %>%
+  relocate(ri_clinician_id_name, .after = ri_clinician_id)
+```
+
+## Numeric and factor variables
+
+### Institution
+
+```{r}
+cols <- c("ri_institution", "ri_institution_2")
+get_values(tool_pilot, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Baylor College of Medicine - BT House Calls" = 1, 
+    "Johns Hopkins - JHOME" = 2, 
+    "UCSF - Care at Home Program" = 3,
+    "University of Alabama - UAB House Calls" = 4, 
+    "UT Southwestern - COVE" = 5, 
+    "UTH Houston - LBJ House Calls" = 6,
+    "UTH Houston - UT Physicians House Calls" = 7
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "7cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+tool_pilot <- tool_pilot |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+```{r}
+tool_pilot <- tool_pilot %>%
+  rename(calc_institution_7cat = calc_institution) %>%
+  mutate(
+    calc_institution_7cat_f = factor(
+      calc_institution_7cat, levels = as.numeric(value_labels),
+      labels = names(value_labels)
+    )
+  ) %>% relocate(calc_institution_7cat_f, .after = calc_institution_7cat)
+```
+
+### Screening items
+
+```{r}
+cols <- c("ri_necessities", "ri_environment", "ri_caregiver", "ri_sedated", 
+          "ri_isolated", "ri_anxious", "ri_prohibited", "ri_unmet_needs", 
+          "ri_injuries")
+
+get_values(tool_pilot, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Yes" = 1,
+    "No" = 0,
+    "Unable to assess" = 99
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "3cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+tool_pilot <- tool_pilot |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### ri_caregiver_un_reason
+
+```{r}
+cols <- c("ri_caregiver_un_reason")
+
+get_values(tool_pilot, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Caregiver not present" = 1,
+    "Other reason" = 98
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "2cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+tool_pilot <- tool_pilot |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Yes or No
+
+```{r}
+cols <- c("suspect_em", "ri_report", "ri_refer_svcs", "ri_reflection")
+
+get_values(tool_pilot, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Yes" = 1,
+    "No" = 0
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "2cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+tool_pilot <- tool_pilot |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### EM type
+
+```{r}
+cols <- paste0("ri_em_type_", c(1:7, 98, 99))
+
+### Change factor labels from "checked" and "unchecked" to "Yes" and "No"
+tool_pilot <- tool_pilot %>% 
+  mutate(
+    across(
+      .cols = all_of(cols),
+      .fns = ~ case_when(
+        .x == "Checked" ~ "Yes",
+        .x == "Unchecked" ~ "No"
+      )
+    )
+  )
+```
+
+
+```{r}
+get_values(tool_pilot, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Yes" = 1,
+    "No" = 0
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "2cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+tool_pilot <- tool_pilot |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+
+# Remove variables without important research data
+
+```{r}
+tool_pilot <- tool_pilot %>% 
+  select(-c(redcap_survey_identifier, password_entry, password_incorrect_1, 
+            ri_clinician_name))
 ```
 
 
@@ -53,86 +461,39 @@ tool_pilot <- clean_names(tool_pilot)
 # Create sequence of relevant dates
 dates <- c(seq(as.Date('2024-11-11'), as.Date('2024-11-25'), by = "day"))
 
-# Filter the reporting_instrument_timestamp variable to include only dates in
+# Filter the ri_date variable to include only dates in
 # sequence
-tool_pilot <- tool_pilot %>% filter(as.Date(reporting_instrument_timestamp) %in% dates)
+tool_pilot <- tool_pilot %>% filter(as.Date(ri_date) %in% dates)
 ```
 
 
-# Create a dataframe with variable descriptions
-
-Extract the column names from the data and labels data frames to create a data frame of variable descriptions.
+# Update variable descriptions dataframe with new variables
 
 ```{r}
-labels <- c("Record ID", "Survey Identifier", "Survey Timestamp", 
-           "Form start timestamp", "Form date", "Enter survey password", 
-           "Password verification", "Password verification", "Patient MRN", 
-           "Institution", "Baylor clinician name", "Other Baylor clinician name", 
-           "Johns Hopkins clinician name", "Other Johns Hopkins clinician name", 
-           "UCSF clinician name", "Other UCSF clinician name", 
-           "UAB clinician name", "Other UAB clinician name", 
-           "UTSW clinician name", "Other UTSW clinician name", 
-           "LBJ clinician name", "Other LBJ clinician name", 
-           "UTP clinician name", "Other UTP clinician name", "Clinician ID", 
-           "Clinician name", "Absence of necessities ", 
-           "Health or safety concern", "Environment not assessed reason", 
-           "Defensive", "Caregiver not assessed reason", 
-           "Other reason caregiver not assessed", "Chemically sedated", 
-           "Isolated", "Anxious", "Prohibited", "Unmet needs", 
-           "Unexplained injuries", "Patient not assessed reason", 
-           "Suspect EM", "Indicators observed but EM not suspected explanation", 
-           "Suspect EM explanation", "Self-neglect suspected", 
-           "Financial exploitation suspected", 
-           "Emotional or psychological abuse suspected", 
-           "Physical abuse suspected", "Sexual abuse suspected", 
-           "Caregiver neglect suspected", "Abandonment suspected", 
-           "Other mistreatment type suspected", 
-           "Dont know/ Not sure of mistreatment type", 
-           "Specified other mistreatment type suspected", 
-           "Intention to report to APS", 
-           "No intention to report to APS explanation", 
-           "Other service referral", "Specify other service", "Story", 
-           "Story note", "Complete"
-)
+tool_pilot_vars <- names(tool_pilot) %>% 
+  # Subset new variables
+  setdiff(., var_desc$variable) %>%
+  list() %>%
+  # Convert list of new variables into dataframe
+  as.data.frame(col.names = "variable") %>%
+  # Join descriptions from var_desc dataframe to new data frame 
+  mutate(
+    no_suffix = gsub("_[0-9]+cat[_f]*", "", x = variable)
+  ) %>% inner_join(var_desc, by = c("no_suffix" = "variable")) %>%
+  # remove "no_suffix" variable
+  select(-c(no_suffix))
 
-var_desc <- data.frame(variable = names(tool_pilot),
-                       description = names(tool_pilot_labels),
-                       label = labels)
+var_desc <- bind_rows(var_desc, tool_pilot_vars) %>% 
+  add_row(variable = "timestamp_end", description = "Form end timestamp",
+          label = "Form start timestamp", id = 62) %>% arrange(id) %>% 
+  add_row(variable = "ri_clinician_id_name", description = "Clinician name",
+          label = "Clinician name", id = 28) %>% arrange(id) %>%
+  select(-c(id))
 
 ```
 
 
-# Replace certain numerically coded variables with character values
-
-```{r}
-# Create a named vector with variable names and variable descriptions 
-naming_vec <- setNames(as.list(var_desc$description),
-                               var_desc$variable)
-```
-
-```{r}
-# Order of variables
-vars <- unlist(var_desc$variable)
-```
-
-
-```{r}
-screening_items <- c("ri_necessities", "ri_environment", "ri_caregiver", 
-                     "ri_sedated", "ri_isolated", "ri_anxious", "ri_prohibited", 
-                     "ri_unmet_needs", "ri_injuries")
-
-tool_pilot_labels <- tool_pilot_labels %>% rename(unlist(naming_vec)) %>% 
-  select(record_id, ri_institution, ri_clinician_bcm, ri_clinician_jh, 
-         ri_clinician_ucsf, ri_clinician_uab, ri_clinician_utsw, 
-         ri_clinician_lbj, ri_clinician_utp, all_of(screening_items))
-
-tool_pilot <- tool_pilot %>% select(-c(ri_institution, ri_clinician_bcm, ri_clinician_jh, 
-         ri_clinician_ucsf, ri_clinician_uab, ri_clinician_utsw, 
-         ri_clinician_lbj, ri_clinician_utp, all_of(screening_items))) %>% 
-  left_join(tool_pilot_labels, by = "record_id") %>%
-  # re-oder variables
-  select(all_of(vars))
-```
+# Convert link hits data into a longer format
 
 ```{r}
 link_hits <- link_hits %>% 
@@ -140,14 +501,13 @@ link_hits <- link_hits %>%
 ```
 
 
+# Save data
+
 ```{r}
 write_rds(tool_pilot, here::here("data", "detect_tool_pilot.RDS"))
+
 write_rds(var_desc, here::here("data", 
                                "detect_tool_pilot_variable_descriptions.RDS"))
 write_rds(link_hits, here::here("data", 
                                "detect_tool_pilot_link_hits_long_format.RDS"))
 ```
-
-
-
-

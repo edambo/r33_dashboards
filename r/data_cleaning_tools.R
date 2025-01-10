@@ -67,7 +67,11 @@ drop_dup_orig <- function(df, cols, cols_suffix){
   # Create a nested list that has a column name and its "cat" column as the
   # components of each list level.
   if (length(cols) > 1){
-    cols_cat_list <- sort(c(cols, cols_suffix)) %>% cbind() %>% 
+    cols_cat_list <- NULL
+    for(i in 1:length(cols)){
+      cols_cat_list <- append(cols_cat_list, c(cols[i], cols_suffix[i]))
+    }
+    cols_cat_list <- cbind(cols_cat_list) %>% 
       split(., cut(seq_along(.), length(cols), labels = FALSE))
   }else if(length(cols) == 1){
     cols_cat_list <- list(sort(c(cols, cols_suffix)))

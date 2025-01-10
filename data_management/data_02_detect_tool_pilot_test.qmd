@@ -1,0 +1,577 @@
+---
+title: "Create variables for visualizing the DETECT tool pilot study data"
+---
+
+# Overview
+
+In this file, we create some new variables that summarize the completion and missingness counts for various variables in the DETECT tool pilot study data. These new variables will used in creating interactive plots using the plotly package. 
+
+
+# Load packages
+
+```{r, message= FALSE}
+library(dplyr, warn.conflicts = FALSE)
+library(readr)
+library(here)
+library(crosstalk)
+```
+
+
+# Load data
+
+```{r, message=FALSE}
+pilot_data <- readRDS(here::here("data", "detect_tool_pilot.RDS"))
+var_desc <- readRDS(here::here("data", 
+                               "detect_tool_pilot_variable_descriptions.RDS"))
+```
+
+
+# Select variables useful for the dashboard
+
+```{r}
+dash_vars <- c("record_id", "reporting_instrument_complete", "ri_date", 
+               "ri_patient_mrn", "ri_institution_7cat_f", "ri_clinician_id", 
+               "ri_clinician_id_name", "ri_necessities_3cat_f", 
+               "ri_environment_3cat_f", "ri_environment_un_reason", 
+               "ri_caregiver_3cat_f", "ri_caregiver_un_reason_2cat_f", 
+               "ri_caregiver_oth", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
+               "ri_anxious_3cat_f", "ri_prohibited_3cat_f", 
+               "ri_unmet_needs_3cat_f", "ri_injuries_3cat_f", 
+               "ri_patient_assess", "suspect_em_2cat_f", "ri_em_no_reason", 
+               "ri_em_reason", "ri_em_type_1_2cat_f", "ri_em_type_2_2cat_f", 
+               "ri_em_type_3_2cat_f", "ri_em_type_4_2cat_f", "ri_em_type_5_2cat_f", 
+               "ri_em_type_6_2cat_f", "ri_em_type_7_2cat_f", "ri_em_type_98_2cat_f", 
+               "ri_em_type_99_2cat_f", "ri_em_type_other", "ri_report_2cat_f", 
+               "ri_aps_no_reason", "ri_refer_svcs_2cat_f", 
+               "ri_refer_svcs_specify", "ri_reflection_2cat_f", 
+               "ri_reflection_notes")
+
+dash_data <- pilot_data %>% select(all_of(dash_vars))
+```
+
+```{r}
+ind_em_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f", 
+                 "ri_caregiver_3cat_f", "ri_sedated_3cat_f", 
+                 "ri_isolated_3cat_f", "ri_anxious_3cat_f", 
+                 "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+                 "ri_injuries_3cat_f")
+```
+
+# Missingness data
+
+```{r}
+missing_data <- dash_data
+```
+
+## Create fuction to generate missingness variables
+
+This function will also take branching/ skip logic into consideration.
+
+```{r}
+pilot_miss <- function(df, var, condition = NULL){
+  if(is.null(condition)){
+    new_df <- df %>% 
+      mutate(
+        "{var}_miss" := case_when(
+          is.na(.data[[var]]) ~ 1,
+          TRUE ~ 0
+        )
+      )
+  }else if(!is.null(condition)){
+    new_df <- df %>%
+      mutate(
+         "{var}_miss" := case_when(
+           eval(parse(text = condition)) & is.na(.data[[var]]) ~ 1,
+           !(eval(parse(text = condition))) & is.na(.data[[var]]) ~ NA,
+           eval(parse(text = condition)) & !is.na(.data[[var]]) ~ 0
+        )       
+      )
+  }
+  
+  new_df %>% relocate(paste0(var, "_miss"), .after = var)
+}
+```
+
+## Variables with no conditional arguments/ skip logic
+
+```{r}
+vars <- c("ri_patient_mrn", "ri_institution_7cat_f", "ri_clinician_id_name", 
+          "ri_necessities_3cat_f", "ri_environment_3cat_f", 
+          "ri_caregiver_3cat_f", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
+          "ri_anxious_3cat_f", "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+          "ri_injuries_3cat_f", "suspect_em_2cat_f", "ri_reflection_2cat_f"
+          )
+condition <- NULL
+```
+
+```{r}
+for(var in vars){
+  missing_data <- pilot_miss(df = missing_data, var = var, 
+                     condition = condition)  
+}
+```
+
+## Variables with conditional arguments/ skip logic
+
+### ri_environment_un_reason
+
+```{r}
+var <- "ri_environment_un_reason"
+
+condition_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f")
+
+condition <- "if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to assess')"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_caregiver_un_reason
+
+```{r}
+var <- "ri_caregiver_un_reason_2cat_f"
+condition <- "ri_caregiver_3cat_f == 'Unable to assess'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition) 
+```
+
+### ri_caregiver_oth
+
+```{r}
+var <- "ri_caregiver_oth"
+condition <- "ri_caregiver_un_reason_2cat_f == 'Other reason'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_patient_assess
+
+```{r}
+var <- "ri_patient_assess"
+
+condition_vars <- c("ri_sedated_3cat_f", "ri_isolated_3cat_f",
+                    "ri_anxious_3cat_f", "ri_prohibited_3cat_f", 
+                    "ri_unmet_needs_3cat_f", "ri_injuries_3cat_f")
+
+condition <- "if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to assess')"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_em_no_reason
+
+```{r}
+var <- "ri_em_no_reason"
+
+condition_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f",
+                    "ri_caregiver_3cat_f", "ri_sedated_3cat_f", 
+                    "ri_isolated_3cat_f", "ri_anxious_3cat_f", 
+                    "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+                    "ri_injuries_3cat_f")
+
+condition <- "suspect_em_2cat_f == 'No' & if_any(.cols = all_of(condition_vars), 
+.fns = ~.x == 'Yes')"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_em_reason
+
+```{r}
+var <- "ri_em_reason"
+
+condition_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f",
+                    "ri_caregiver_3cat_f", "ri_sedated_3cat_f", 
+                    "ri_isolated_3cat_f", "ri_anxious_3cat_f", 
+                    "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+                    "ri_injuries_3cat_f")
+
+condition <- "suspect_em_2cat_f == 'Yes' & if_all(.cols = all_of(condition_vars), 
+.fns = ~.x != 'Yes')"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### EM Type vars
+
+```{r}
+em_type_vars <- c("ri_em_type_1_2cat_f", "ri_em_type_2_2cat_f", "ri_em_type_3_2cat_f", 
+          "ri_em_type_4_2cat_f", "ri_em_type_5_2cat_f", "ri_em_type_6_2cat_f", 
+          "ri_em_type_7_2cat_f", "ri_em_type_98_2cat_f", "ri_em_type_99_2cat_f")
+```
+
+```{r}
+missing_data <- missing_data %>%
+  mutate(
+    ri_em_type_miss = case_when(
+      suspect_em_2cat_f == 'Yes' & 
+        if_all(.cols = all_of(em_type_vars), 
+               .fns = ~.x == "No") ~ 1,
+      suspect_em_2cat_f != 'Yes' & 
+        if_all(.cols = all_of(em_type_vars), 
+               .fns = ~.x == "No") ~ NA,
+      suspect_em_2cat_f == 'Yes' & 
+        if_any(.cols = all_of(em_type_vars), 
+               .fns = ~.x == "Yes") ~ 0      
+      )
+  )
+```
+
+### ri_em_type_other
+
+```{r}
+var <- "ri_em_type_other"
+condition <- "ri_em_type_98_2cat_f == 'Checked'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_report_2cat_f
+
+```{r}
+var <- "ri_report_2cat_f"
+condition <- "suspect_em_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_aps_no_reason
+
+```{r}
+var <- "ri_aps_no_reason"
+condition <- "ri_report_2cat_f == 'No'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_refer_svcs_2cat_f
+
+```{r}
+var <- "ri_refer_svcs_2cat_f"
+condition <- "suspect_em_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_refer_svcs_specify
+
+```{r}
+var <- "ri_refer_svcs_specify"
+condition <- "ri_refer_svcs_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition) 
+```
+
+### ri_reflection_notes
+
+```{r}
+var <- "ri_reflection_notes"
+condition <- "ri_reflection_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- pilot_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+
+# Prepare Missingness data for visualization
+
+## Non-textbox data
+
+```{r}
+missing_plot_data <- missing_data %>% 
+  # Select only the record id and the missng data variables
+  select(record_id, ends_with("_miss")) %>%
+  # Remove "_miss" suffix
+  rename_with(~gsub("_miss", "", .x)) %>%
+  tidyr::pivot_longer(!record_id, names_to = "var", values_to = "missingness") %>%
+  # Recode missingness
+  mutate(
+    missingness_3cat_f = case_when(
+      missingness == 1 ~ "Missing",
+      missingness == 0 ~ "Not missing",
+      is.na(missingness) ~ "Not applicable"
+    ),
+    missingness_3cat_f = factor(missingness_3cat_f, 
+                     levels = c("Missing", "Not missing", "Not applicable")
+                     )
+  ) %>%
+  # Create count column
+  group_by(var, missingness_3cat_f) %>%
+  mutate(
+    count = n()
+  ) %>% ungroup() %>% 
+  select(-c(record_id)) %>%
+  distinct() %>% 
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable")) %>%
+  # Create label for aggregate variable "ri_em_type"
+  mutate(
+    label = case_when(
+      var == "ri_em_type" ~ "EM type",
+      TRUE ~ label
+    )
+  ) %>% 
+  # Ensure the order of labels in dataframe is maintained in the plot
+  mutate(
+    label = factor(label, levels = rev(unique(label)))
+  )
+  
+```
+
+## Text box data
+
+```{r}
+text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
+                    "ri_patient_assess", "ri_em_no_reason", "ri_em_reason", 
+                    "ri_em_type_other", "ri_aps_no_reason", 
+                    "ri_refer_svcs_specify", "ri_reflection_notes")
+
+text_box_miss <- sort(c(text_box_items, paste0(text_box_items, "_miss")))
+
+```
+
+Some values have empty values due to skip logic and not because they are actually missing. These values will be replaced by "Not applicable due to skip logic"
+
+```{r}
+text_box_data <- missing_data %>% select(record_id, all_of(text_box_miss))
+
+# For each text box variable, create a variable that shows whether or not there is a value
+for(i in text_box_items){
+  text_box_data <- text_box_data %>%
+    mutate(
+      "{i}_filled_3cat_f" := case_when(
+        .data[[paste0(i, "_miss")]] == 0 ~ "Filled",
+        .data[[paste0(i, "_miss")]] == 1 ~ "Not filled",
+        is.na(.data[[paste0(i, "_miss")]]) ~ "Not applicable"
+      )
+    ) %>% relocate(paste0(i, "_filled_3cat_f"), .after = i)
+}
+```
+
+### Plot data
+
+```{r}
+text_box_plot_data <- text_box_data %>% 
+  select(record_id, ends_with("filled_3cat_f")) %>%
+  mutate(
+    across(
+      .cols = !record_id,
+      .fns = ~ factor(.x,
+                      levels = c("Filled", "Not filled", "Not applicable")
+                      )
+    )
+  ) %>%
+  tidyr::pivot_longer(!record_id, names_to = "var", values_to = "filled") %>%
+  # Create count column
+  group_by(var, filled) %>%
+  mutate(
+    count = n()
+  ) %>% ungroup() %>% 
+  select(-c(record_id)) %>%
+  distinct() %>%
+  # Remove "filled_3cat_f" suffix to allow labels to match
+  mutate(
+    var = gsub("_filled_3cat_f", "", var)
+  )%>%
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable")) %>%
+  # Ensure the order of labels in dataframe is maintained in the plot
+  mutate(
+    label = factor(label, levels = rev(unique(label)))
+  )
+
+# Ensure that unused categories still show up in plot
+text_box_plot_data <- bind_rows(text_box_plot_data, 
+                  data.frame(filled = setdiff(levels(text_box_plot_data$filled), 
+                                              unique(text_box_plot_data$filled)
+                                              )
+                             )
+                  )
+```
+
+
+## Table data
+
+```{r}
+text_box_table_data <- text_box_data %>% 
+  # select(record_id, ends_with("filled_3cat_f")) %>%
+  select(-c(ends_with("_miss"))) %>%
+  mutate(
+    across(
+      .cols = ends_with("filled_3cat_f"),
+      .fns = ~ factor(.x,
+                      levels = c("Filled", "Not filled", "Not applicable")
+                      )
+    )
+  ) %>%
+  tidyr::pivot_longer(cols = ends_with("filled_3cat_f"), 
+                      names_to = "var", values_to = "filled") %>%
+  filter(filled == "Filled") %>% select(-c(filled, var)) %>%
+  tidyr::pivot_longer(cols = !record_id, 
+                      names_to = "var", values_to = "content") %>%
+  filter(!is.na(content)) %>% 
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable")) %>% select(-c(description)) %>%
+  relocate(label, .after = var)
+```
+
+# Other plots
+
+```{r}
+shared_plot_data <- dash_data %>% 
+  select(-c(reporting_instrument_complete, ri_date, ri_patient_mrn)) %>%
+  tidyr::pivot_longer(-c(record_id, ri_institution_7cat_f, ri_clinician_id), 
+                      names_to = "var", values_to = "value") %>%
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable"))
+```
+
+```{r}
+# Function for creating data subsets
+data_subset <- function(vars, level_list){
+  df <- shared_plot_data %>% filter(var %in% vars) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value, 
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in dataframe is maintained in the plot
+      label = factor(label, levels = rev(unique(label)))
+    )
+}
+```
+
+## Indicators of abuse
+
+```{r}
+ind_em_plot_data <- data_subset(ind_em_vars, 
+                                        level_list = c("Yes", "No", "Unable to assess"))
+```
+
+## Suspect EM
+
+```{r}
+suspect_em_plot_data <- data_subset("suspect_em_2cat_f", 
+                                        level_list = c("Yes", "No"))
+
+```
+
+## EM Type
+
+```{r}
+em_type_plot_data <- data_subset(em_type_vars, 
+                                        level_list = c("Yes", "No"))
+
+```
+
+## Intent to Report to APS
+
+```{r}
+report_plot_data <- data_subset("ri_report_2cat_f", 
+                                        level_list = c("Yes", "No"))
+  
+
+```
+
+# Interactivity
+Create individual shared data for each topic
+
+## Indicators of EM Module
+
+```{r}
+# Character vector of filters
+filters <- c(
+ "Suspect EM", "Self-neglect suspected", "Financial exploitation suspected", 
+ "Emotional or psychological abuse suspected", "Physical abuse suspected", 
+ "Sexual abuse suspected", "Caregiver neglect suspected", 
+ "Abandonment suspected", "Other mistreatment type suspected", 
+ "Dont know/ Not sure of mistreatment type", "Intend to report to APS",
+ "Other service referral", "Have helpful details"
+)
+
+filters <- stringr::str_wrap(filters, width = 30)
+
+ind_em_shared_data <- dash_data %>% 
+  select(-c(reporting_instrument_complete, ri_date, ri_patient_mrn, 
+            ri_reflection_2cat_f)) %>%
+  tidyr::pivot_longer(all_of(ind_em_vars), 
+                      names_to = "em_ind_var", values_to = "em_ind_value") %>%
+  # Add labels
+  left_join(var_desc, by = c("em_ind_var" = "variable")) %>%
+  # Make `label` a factor variable
+  rename(
+    "ind_em_label" = "label"
+  ) %>%
+  mutate(
+    # Include line breaks in labels
+    ind_em_label = stringr::str_wrap(ind_em_label, width = 30),
+    ind_em_label = factor(ind_em_label)
+  ) %>%
+  # Filter where indicators of abuse have values of Yes
+  filter(em_ind_value == "Yes") %>%
+  tidyr::pivot_longer(c("suspect_em_2cat_f", all_of(em_type_vars),
+                        "ri_report_2cat_f", "ri_refer_svcs_2cat_f"), 
+                      names_to = "filter_var", values_to = "filter_value") %>%
+  # Make the value variable a factor
+  mutate(
+    filter_value = factor(filter_value, levels = c("No", "Yes"))
+  ) %>%
+  # Add filter labels
+  left_join(var_desc, by = c("filter_var" = "variable")) %>%
+  # Make `label` a factor variable
+  mutate(
+    # Include line breaks in labels
+    label = stringr::str_wrap(label, width = 30),
+    label = factor(label, levels = filters) 
+    )%>%
+  # Create crosstalk shared data object
+  crosstalk::SharedData$new(.)
+```
+
+# Save data
+
+```{r}
+path <- here::here("data", "dashboard_prepped_data.RData")
+save(missing_plot_data, text_box_plot_data, text_box_table_data, 
+     ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, 
+     report_plot_data, ind_em_shared_data, file = path)
+```
+
+

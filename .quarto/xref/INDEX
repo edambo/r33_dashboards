@@ -70,5 +70,8 @@
   },
   "sections/screening_tool_dashboard.qmd": {
     "screening_tool_dashboard.html": "abf9051e"
+  },
+  "data_management/data_02_detect_tool_pilot_test.qmd": {
+    "data_02_detect_tool_pilot_test.html": "17b3ff4c"
   }
 }
