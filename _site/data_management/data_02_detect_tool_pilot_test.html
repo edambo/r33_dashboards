@@ -191,7 +191,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#prepare-missingness-data-for-visualization" id="toc-prepare-missingness-data-for-visualization" class="nav-link" data-scroll-target="#prepare-missingness-data-for-visualization">Prepare Missingness data for visualization</a>
   <ul class="collapse">
-  <li><a href="#non-textbox-data" id="toc-non-textbox-data" class="nav-link" data-scroll-target="#non-textbox-data">Non-textbox data</a></li>
+  <li><a href="#all-data" id="toc-all-data" class="nav-link" data-scroll-target="#all-data">All data</a></li>
   <li><a href="#text-box-data" id="toc-text-box-data" class="nav-link" data-scroll-target="#text-box-data">Text box data</a>
   <ul class="collapse">
   <li><a href="#plot-data" id="toc-plot-data" class="nav-link" data-scroll-target="#plot-data">Plot data</a></li>
@@ -546,46 +546,61 @@ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.</co
 </section>
 <section id="prepare-missingness-data-for-visualization" class="level1">
 <h1>Prepare Missingness data for visualization</h1>
-<section id="non-textbox-data" class="level2">
-<h2 class="anchored" data-anchor-id="non-textbox-data">Non-textbox data</h2>
+<section id="all-data" class="level2">
+<h2 class="anchored" data-anchor-id="all-data">All data</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>missing_plot_data <span class="ot">&lt;-</span> missing_data <span class="sc">%&gt;%</span> </span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Select only the record id and the missng data variables</span></span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(record_id, <span class="fu">ends_with</span>(<span class="st">"_miss"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Remove "_miss" suffix</span></span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span><span class="fu">gsub</span>(<span class="st">"_miss"</span>, <span class="st">""</span>, .x)) <span class="sc">%&gt;%</span></span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">!</span>record_id, <span class="at">names_to =</span> <span class="st">"var"</span>, <span class="at">values_to =</span> <span class="st">"missingness"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Recode missingness</span></span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">missingness_3cat_f =</span> <span class="fu">case_when</span>(</span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>      missingness <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Missing"</span>,</span>
-<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>      missingness <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"Not missing"</span>,</span>
-<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(missingness) <span class="sc">~</span> <span class="st">"Not applicable"</span></span>
-<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">missingness_3cat_f =</span> <span class="fu">factor</span>(missingness_3cat_f, </span>
-<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>                     <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Missing"</span>, <span class="st">"Not missing"</span>, <span class="st">"Not applicable"</span>)</span>
-<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>                     )</span>
-<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create count column</span></span>
-<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(var, missingness_3cat_f) <span class="sc">%&gt;%</span></span>
-<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">n</span>()</span>
-<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(record_id)) <span class="sc">%&gt;%</span></span>
-<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add labels</span></span>
-<span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"var"</span> <span class="ot">=</span> <span class="st">"variable"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb43-27"><a href="#cb43-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create label for aggregate variable "ri_em_type"</span></span>
-<span id="cb43-28"><a href="#cb43-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb43-29"><a href="#cb43-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">case_when</span>(</span>
-<span id="cb43-30"><a href="#cb43-30" aria-hidden="true" tabindex="-1"></a>      var <span class="sc">==</span> <span class="st">"ri_em_type"</span> <span class="sc">~</span> <span class="st">"EM type"</span>,</span>
-<span id="cb43-31"><a href="#cb43-31" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> label</span>
-<span id="cb43-32"><a href="#cb43-32" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb43-33"><a href="#cb43-33" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb43-34"><a href="#cb43-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Ensure the order of labels in dataframe is maintained in the plot</span></span>
-<span id="cb43-35"><a href="#cb43-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb43-36"><a href="#cb43-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> <span class="fu">rev</span>(<span class="fu">unique</span>(label)))</span>
-<span id="cb43-37"><a href="#cb43-37" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>label_order <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Brief note"</span>, <span class="st">"Have helpful details"</span>, <span class="st">"Specify other service"</span>, </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Other service referral"</span>, <span class="st">"No intention to report to APS reason"</span>, </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Intend to report to APS"</span>, <span class="st">"Specific other mistreatment type suspected"</span>, </span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"EM type"</span>, <span class="st">"Suspect EM reason"</span>, </span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Indicators observed but EM not suspected reason"</span>, </span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Suspect EM"</span>, <span class="st">"Patient not assessed reason"</span>, </span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Unexplained injuries"</span>, <span class="st">"Unmet needs"</span>, <span class="st">"Prohibited"</span>, <span class="st">"Anxious"</span>, <span class="st">"Isolated"</span>, </span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Chemically sedated"</span>, <span class="st">"Other reason caregiver not assessed"</span>, </span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Caregiver not assessed reason"</span>, <span class="st">"Defensive"</span>, </span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Environment not assessed reason"</span>, <span class="st">"Environment health or safety concern"</span>, </span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Absence of necessities "</span>, <span class="st">"Clinician name"</span>, <span class="st">"Institution"</span>, <span class="st">"Patient MRN"</span></span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>missing_plot_data <span class="ot">&lt;-</span> missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Select only the record id and the missng data variables</span></span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(record_id, <span class="fu">ends_with</span>(<span class="st">"_miss"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Remove "_miss" suffix</span></span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(<span class="sc">~</span><span class="fu">gsub</span>(<span class="st">"_miss"</span>, <span class="st">""</span>, .x)) <span class="sc">%&gt;%</span></span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">!</span>record_id, <span class="at">names_to =</span> <span class="st">"var"</span>, <span class="at">values_to =</span> <span class="st">"missingness"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Recode missingness</span></span>
+<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">missingness_3cat_f =</span> <span class="fu">case_when</span>(</span>
+<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a>      missingness <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Missing"</span>,</span>
+<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>      missingness <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"Not missing"</span>,</span>
+<span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(missingness) <span class="sc">~</span> <span class="st">"Not applicable"</span></span>
+<span id="cb43-27"><a href="#cb43-27" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb43-28"><a href="#cb43-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">missingness_3cat_f =</span> <span class="fu">factor</span>(missingness_3cat_f, </span>
+<span id="cb43-29"><a href="#cb43-29" aria-hidden="true" tabindex="-1"></a>                     <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Missing"</span>, <span class="st">"Not missing"</span>, <span class="st">"Not applicable"</span>)</span>
+<span id="cb43-30"><a href="#cb43-30" aria-hidden="true" tabindex="-1"></a>                     )</span>
+<span id="cb43-31"><a href="#cb43-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb43-32"><a href="#cb43-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create count column</span></span>
+<span id="cb43-33"><a href="#cb43-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(var, missingness_3cat_f) <span class="sc">%&gt;%</span></span>
+<span id="cb43-34"><a href="#cb43-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb43-35"><a href="#cb43-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">n</span>()</span>
+<span id="cb43-36"><a href="#cb43-36" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb43-37"><a href="#cb43-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(record_id)) <span class="sc">%&gt;%</span></span>
+<span id="cb43-38"><a href="#cb43-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb43-39"><a href="#cb43-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add labels</span></span>
+<span id="cb43-40"><a href="#cb43-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"var"</span> <span class="ot">=</span> <span class="st">"variable"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb43-41"><a href="#cb43-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create label for aggregate variable "ri_em_type"</span></span>
+<span id="cb43-42"><a href="#cb43-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb43-43"><a href="#cb43-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">case_when</span>(</span>
+<span id="cb43-44"><a href="#cb43-44" aria-hidden="true" tabindex="-1"></a>      var <span class="sc">==</span> <span class="st">"ri_em_type"</span> <span class="sc">~</span> <span class="st">"EM type"</span>,</span>
+<span id="cb43-45"><a href="#cb43-45" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> label</span>
+<span id="cb43-46"><a href="#cb43-46" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb43-47"><a href="#cb43-47" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-48"><a href="#cb43-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb43-49"><a href="#cb43-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ensure the correct order of labels is maintained in the plot</span></span>
+<span id="cb43-50"><a href="#cb43-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> label_order)</span>
+<span id="cb43-51"><a href="#cb43-51" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb43-52"><a href="#cb43-52" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="text-box-data" class="level2">
@@ -596,23 +611,22 @@ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.</co
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_em_type_other"</span>, <span class="st">"ri_aps_no_reason"</span>, </span>
 <span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_refer_svcs_specify"</span>, <span class="st">"ri_reflection_notes"</span>)</span>
 <span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>text_box_miss <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">c</span>(text_box_items, <span class="fu">paste0</span>(text_box_items, <span class="st">"_miss"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>text_box_miss <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">c</span>(text_box_items, <span class="fu">paste0</span>(text_box_items, <span class="st">"_miss"</span>)))</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>text_box_data <span class="ot">&lt;-</span> missing_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(record_id, <span class="fu">all_of</span>(text_box_miss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Some values have empty values due to skip logic and not because they are actually missing. These values will be replaced by “Not applicable due to skip logic”</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>text_box_data <span class="ot">&lt;-</span> missing_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(record_id, <span class="fu">all_of</span>(text_box_miss))</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="co"># For each text box variable, create a variable that shows whether or not there is a value</span></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> text_box_items){</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  text_box_data <span class="ot">&lt;-</span> text_box_data <span class="sc">%&gt;%</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>      <span class="st">"{i}_filled_3cat_f"</span> <span class="sc">:</span><span class="er">=</span> <span class="fu">case_when</span>(</span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>        .data[[<span class="fu">paste0</span>(i, <span class="st">"_miss"</span>)]] <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"Filled"</span>,</span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>        .data[[<span class="fu">paste0</span>(i, <span class="st">"_miss"</span>)]] <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Not filled"</span>,</span>
-<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">is.na</span>(.data[[<span class="fu">paste0</span>(i, <span class="st">"_miss"</span>)]]) <span class="sc">~</span> <span class="st">"Not applicable"</span></span>
-<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(<span class="fu">paste0</span>(i, <span class="st">"_filled_3cat_f"</span>), <span class="at">.after =</span> i)</span>
-<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For each text box variable, create a variable that shows whether or not there is a value</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> text_box_items){</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  text_box_data <span class="ot">&lt;-</span> text_box_data <span class="sc">%&gt;%</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>      <span class="st">"{i}_filled_3cat_f"</span> <span class="sc">:</span><span class="er">=</span> <span class="fu">case_when</span>(</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>        .data[[<span class="fu">paste0</span>(i, <span class="st">"_miss"</span>)]] <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"Filled"</span>,</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>        .data[[<span class="fu">paste0</span>(i, <span class="st">"_miss"</span>)]] <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Not filled"</span>,</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">is.na</span>(.data[[<span class="fu">paste0</span>(i, <span class="st">"_miss"</span>)]]) <span class="sc">~</span> <span class="st">"Not applicable"</span></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(<span class="fu">paste0</span>(i, <span class="st">"_filled_3cat_f"</span>), <span class="at">.after =</span> i)</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
 ℹ Please use `all_of()` or `any_of()` instead.
@@ -809,7 +823,7 @@ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.</co
 <h1>Save data</h1>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"dashboard_prepped_data.RData"</span>)</span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(missing_plot_data, text_box_plot_data, text_box_table_data, </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(missing_plot_data, text_box_table_data, </span>
 <span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>     ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, </span>
 <span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>     report_plot_data, ind_em_shared_data, <span class="at">file =</span> path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>

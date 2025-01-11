@@ -246,12 +246,10 @@ list(
 )
 ```
 
-## Row
-
-### Column
+## Row {.flow}
 
 ```{r, echo = FALSE}
-#| title: Non-textbox data Missingness Summary
+#| title: Missingness Summary
 # Plot missing data
 gg_missing <- ggplot(missing_plot_data, aes(x = count, y = label, fill = missingness_3cat_f)) +
   geom_bar(stat = "identity", color = "transparent", show.legend = TRUE) +
@@ -270,42 +268,6 @@ layout(
        yaxis = list(fixedrange = TRUE)
 )
 ```
-
-### Column {.tabset}
-
-```{r, echo = FALSE}
-#| title: Textbox Data Missingness Summary
-
-gg_tb <- ggplot(text_box_plot_data, 
-                      aes(x = count, y = label, fill = filled)) +
-  geom_bar(stat = "identity", color = "transparent", show.legend=TRUE) +
-  scale_fill_manual("Legend",
-                    values = c("Filled" = "#219ebc", 
-                               "Not filled" = "#AFD5E0",
-                               "Not applicable" = "#023047"), drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
-
-ggplotly(gg_tb, tooltip = c("count")) %>%
-  layout(
-         xaxis = list(fixedrange = TRUE),
-         yaxis = list(
-           range = list(0,10),
-           fixedrange = TRUE)
-  )
-```
-
-```{r, echo = FALSE}
-#| title: Textbox Data
-DT::datatable(text_box_table_data, options = list(autoWidth = TRUE), 
-              colnames = c("Record ID", "Variable", "Variable Label", 
-                           "Text Box Content"),
-              filter = list(
-                position = 'top', clear = FALSE)
-)
-```
-
 
 ## Row
 
@@ -405,7 +367,7 @@ ggplotly(gg_report, tooltip = c("text")) %>%
   )
 ```
 
-## Row
+## Row {.tabset}
 
 ```{r, echo = FALSE}
 #| title: When Indicators of EM Module Questions Have Values of "Yes" 
@@ -458,4 +420,12 @@ crosstalk::bscols(
 )
 ```
 
-
+```{r, echo = FALSE}
+#| title: Textbox Data
+DT::datatable(text_box_table_data, options = list(autoWidth = TRUE), 
+              colnames = c("Record ID", "Variable", "Variable Label", 
+                           "Text Box Content"),
+              filter = list(
+                position = 'top', clear = FALSE)
+)
+```

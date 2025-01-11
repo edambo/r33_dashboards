@@ -309,9 +309,23 @@ missing_data <- pilot_miss(df = missing_data, var = var,
 
 # Prepare Missingness data for visualization
 
-## Non-textbox data
+## All data
 
 ```{r}
+label_order <- c(
+  "Brief note", "Have helpful details", "Specify other service", 
+  "Other service referral", "No intention to report to APS reason", 
+  "Intend to report to APS", "Specific other mistreatment type suspected", 
+  "EM type", "Suspect EM reason", 
+  "Indicators observed but EM not suspected reason", 
+  "Suspect EM", "Patient not assessed reason", 
+  "Unexplained injuries", "Unmet needs", "Prohibited", "Anxious", "Isolated", 
+  "Chemically sedated", "Other reason caregiver not assessed", 
+  "Caregiver not assessed reason", "Defensive", 
+  "Environment not assessed reason", "Environment health or safety concern", 
+  "Absence of necessities ", "Clinician name", "Institution", "Patient MRN"
+)
+
 missing_plot_data <- missing_data %>% 
   # Select only the record id and the missng data variables
   select(record_id, ends_with("_miss")) %>%
@@ -345,11 +359,11 @@ missing_plot_data <- missing_data %>%
       TRUE ~ label
     )
   ) %>% 
-  # Ensure the order of labels in dataframe is maintained in the plot
   mutate(
-    label = factor(label, levels = rev(unique(label)))
+    # Ensure the correct order of labels is maintained in the plot
+    label = factor(label, levels = label_order)
+    
   )
-  
 ```
 
 ## Text box data
@@ -362,13 +376,10 @@ text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
 
 text_box_miss <- sort(c(text_box_items, paste0(text_box_items, "_miss")))
 
+text_box_data <- missing_data %>% select(record_id, all_of(text_box_miss))
 ```
 
-Some values have empty values due to skip logic and not because they are actually missing. These values will be replaced by "Not applicable due to skip logic"
-
 ```{r}
-text_box_data <- missing_data %>% select(record_id, all_of(text_box_miss))
-
 # For each text box variable, create a variable that shows whether or not there is a value
 for(i in text_box_items){
   text_box_data <- text_box_data %>%
@@ -506,8 +517,6 @@ em_type_plot_data <- data_subset(em_type_vars,
 ```{r}
 report_plot_data <- data_subset("ri_report_2cat_f", 
                                         level_list = c("Yes", "No"))
-  
-
 ```
 
 # Interactivity
@@ -569,7 +578,7 @@ ind_em_shared_data <- dash_data %>%
 
 ```{r}
 path <- here::here("data", "dashboard_prepped_data.RData")
-save(missing_plot_data, text_box_plot_data, text_box_table_data, 
+save(missing_plot_data, text_box_table_data, 
      ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, 
      report_plot_data, ind_em_shared_data, file = path)
 ```
