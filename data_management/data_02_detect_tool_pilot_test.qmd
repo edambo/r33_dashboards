@@ -457,7 +457,11 @@ text_box_table_data <- text_box_data %>%
   filter(!is.na(content)) %>% 
   # Add labels
   left_join(var_desc, by = c("var" = "variable")) %>% select(-c(description)) %>%
-  relocate(label, .after = var)
+  relocate(label, .after = var) %>% distinct() %>%
+  # Make record_id a factor variable to prevent slider column filter
+  mutate(
+    record_id = factor(record_id)
+  )
 ```
 
 # Other plots
