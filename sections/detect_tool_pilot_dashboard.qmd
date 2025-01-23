@@ -19,17 +19,20 @@ library(DT)
 <!-- Load data -->
 
 ```{r, include = FALSE}
-detect_tool_data_path <- here::here("data", "detect_tool_pilot.RDS")
-link_data_path <- here::here("data", 
+detect_tool_data_path <- here::here("data", "detect_tool_pilot",
+                                    "detect_tool_pilot.RDS")
+link_data_path <- here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_link_hits_long_format.RDS")
+
 
 pilot_data <- readRDS(detect_tool_data_path)
 link_data <- readRDS(link_data_path)
 
-var_desc <- readRDS(here::here("data", 
+var_desc <- readRDS(here::here("data", "detect_tool_pilot", 
                                "detect_tool_pilot_variable_descriptions.RDS"))
 
-path <- here::here("data", "dashboard_prepped_data.RData")
+path <- here::here("data", "detect_tool_pilot",
+                   "dashboard_prepped_data.RData")
 load(path)
 ```
 
@@ -271,6 +274,18 @@ layout(
 
 ## Row
 
+```{r, echo = FALSE}
+#| title: Textbox Data
+DT::datatable(text_box_table_data, options = list(autoWidth = TRUE), 
+              colnames = c("Record ID", "Date", "Variable Label", 
+                           "Text Box Content"),
+              filter = list(
+                position = 'top', clear = FALSE)
+)
+```
+
+## Row
+
 ### Column {.tabset}
 
 ```{r}
@@ -282,7 +297,8 @@ gg_ind_em <- ggplot(ind_em_plot_data,
   scale_fill_manual("Legend",
                     values = c("Yes" = "#219ebc", 
                                "No" = "#AFD5E0",
-                               "Unable to assess" = "#023047"), drop = FALSE) +
+                               "Unable to assess" = "#023047",
+                               "NA" = "#3C5967"), drop = FALSE) +
   theme_classic() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
@@ -305,7 +321,8 @@ gg_sus_em <- ggplot(suspect_em_plot_data,
   geom_bar(show.legend=TRUE) +
   scale_fill_manual("Legend",
                     values = c("Yes" = "#BAAE21", 
-                               "No" = "#CCC99E"), drop = FALSE) +
+                               "No" = "#CCC99E",
+                               "NA" = "#454002"), drop = FALSE) +
   theme_classic() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
@@ -328,7 +345,8 @@ gg_em_type <- ggplot(em_type_plot_data,
   geom_bar(show.legend=TRUE) +
   scale_fill_manual("Legend",
                     values = c("Yes" = "#BA21B3", 
-                               "No" = "#CC9EC9"), drop = FALSE) +
+                               "No" = "#CC9EC9",
+                               "NA" = "#460242"), drop = FALSE) +
   theme_classic() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
@@ -353,7 +371,7 @@ gg_report <- ggplot(report_plot_data,
   scale_fill_manual("Legend",
                     values = c("Yes" = "#21BA97", 
                                "No" = "#9eccc1",
-                               "NA" = "#024536"), drop = TRUE) +
+                               "NA" = "#024536"), drop = FALSE) +
   theme_classic() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
@@ -367,65 +385,89 @@ ggplotly(gg_report, tooltip = c("text")) %>%
   )
 ```
 
-## Row {.tabset}
+## Row 
+
+### Column
 
 ```{r, echo = FALSE}
-#| title: When Indicators of EM Module Questions Have Values of "Yes" 
+#| title: Indicators of EM Module By Suspect EM
 
-filters <- c(
- "Suspect EM", "Self-neglect suspected", "Financial exploitation suspected", 
- "Emotional or psychological abuse suspected", "Physical abuse suspected", 
- "Sexual abuse suspected", "Caregiver neglect suspected", 
- "Abandonment suspected", "Other mistreatment type suspected", 
- "Dont know/ Not sure of mistreatment type", "Intend to report to APS",
- "Other service referral", "Have helpful details"
-)
-filters <- stringr::str_wrap(filters, width = 30)
+facet_labels <- c(
+                    `Yes` = "EM Suspected",
+                    `No` = "EM not Suspected"
+                    )
 
-colors <- c(
-  "#BAAE21", "#454002", "#CCC99E", "#21BA97", "#024536", "#9ECCC1", "#219EBC",
-  "#023047", "#9FBBCC", "#BA21B3", "#460242", "#CC9EC9", "#BA214A"
-)
-
-filter_value_colors <- setNames(colors, filters)
-
-gg_status_ind <- ggplot(ind_em_shared_data, 
-                      aes(y = ind_em_label, fill = label,
+gg_ind_sus_em <- ggplot(ind_sus_em_data, 
+                      aes(y = ind_em_label, fill = em_ind_value,
                           text = paste0("Count: ", after_stat(count))
                           )) +
-  geom_bar(position = "dodge", show.legend=TRUE) +
-  scale_fill_manual("Filter Legend",
-                    values = filter_value_colors, drop = FALSE) +
+  geom_bar(show.legend=TRUE) +
+  scale_fill_manual("Legend",
+                    values = c("Yes" = "#219ebc", 
+                               "No" = "#AFD5E0",
+                               "Unable to assess" = "#023047",
+                               "NA" = "#3C5967"), drop = FALSE) +
   scale_y_discrete(drop = FALSE) +
   theme_bw() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank()) +
-  facet_wrap(~ filter_value)
+  facet_wrap(~ suspect_em_2cat_f, labeller = as_labeller(facet_labels))
 
-gg_plty_status_ind <- ggplotly(gg_status_ind, tooltip = c("text")) %>%
+ggplotly(gg_ind_sus_em, tooltip = c("text")) %>%
     layout(
            xaxis = list(fixedrange = TRUE),
            yaxis = list(
              # range = list(0,10),
              fixedrange = TRUE)
     ) 
+```
 
-# Create interactive plot with filter functionality using the crosstalk package
-crosstalk::bscols(
-  list(
-    crosstalk::filter_select(id = "filter_var", "Filter", ind_em_shared_data, 
-                               ~label),
-    gg_plty_status_ind
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+gg_sus_type_em <- ggplot(sus_type_em_plot_data, 
+                      aes(x = count, y = label, fill = em_type_value, 
+                          text = paste0("Count: ", count, "\nProportion: ",
+                                        perc))) +
+  geom_bar(stat = "identity", show.legend=TRUE) +
+  scale_fill_manual("Legend",
+                    values = c("Yes" = "#BA21B3", 
+                               "No" = "#CC9EC9",
+                               "NA" = "#460242"), drop = FALSE) +
+  theme_classic() + 
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+ggplotly(gg_sus_type_em, tooltip = c("text")) %>%
+  layout(
+         xaxis = list(fixedrange = TRUE),
+         yaxis = list(
+           # range = list(0,10),
+           fixedrange = TRUE)
   )
-)
 ```
 
 ```{r, echo = FALSE}
-#| title: Textbox Data
-DT::datatable(text_box_table_data, options = list(autoWidth = TRUE), 
-              colnames = c("Record ID", "Variable", "Variable Label", 
-                           "Text Box Content"),
+#| title: Table
+sus_type_em_table_data %>%
+  DT::datatable(., class = list(stripe = FALSE), 
+                options = list(autoWidth = TRUE, columnDefs = list(list(
+              targets = 1,  # Column index starts from 0
+              visible = FALSE
+            ))), 
+              colnames = c("Shade column", "Abuse Type Suspected", "Response", "N", 
+                           "Proportion"),
               filter = list(
                 position = 'top', clear = FALSE)
+) %>% formatStyle(
+  'shade_col',
+  target = 'row',
+  backgroundColor = styleEqual(c(0, 1), c('transparent', '#EEEEEE'))
 )
 ```
+
+
+
+

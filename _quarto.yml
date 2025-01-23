@@ -11,8 +11,8 @@ website:
         href: index.qmd
       - text: "Dashboards"
         menu:
-          - sections/recruitment_and_scheduling_tracker.qmd
-          - sections/clinician_screening_completion_tracker.qmd
+          #- sections/recruitment_and_scheduling_tracker.qmd
+          #- sections/clinician_screening_completion_tracker.qmd
           - sections/detect_tool_pilot_dashboard.qmd
 
 

@@ -32,20 +32,24 @@ source(here::here("R", "data_cleaning_tools.R"))
 
 ```{r, message=FALSE}
 # Raw data with numerically coded values
-tool_pilot_raw <- read_csv(here::here("data", "detect_tool_pilot_test_raw.csv"))
+tool_pilot_raw <- read_csv(here::here("data", "detect_tool_pilot", 
+                                      "detect_tool_pilot_test_raw.csv"))
 
 # Data labels
 tool_pilot_labels <- read_csv(
-  here::here("data", "detect_tool_pilot_test_labels_raw.csv"))
+  here::here("data", "detect_tool_pilot",
+             "detect_tool_pilot_test_labels_raw.csv"))
 
 # Link data
-link_hits <- read_csv(here::here("data", "detect_tool_pilot_link_hits.csv"))
+link_hits <- read_csv(here::here("data", "detect_tool_pilot",
+                                 "detect_tool_pilot_link_hits.csv"))
 ```
 
 
 # Column name cleaning
 
-Here we will convert all variable names to snake case with double underscores reduced to single underscores so that everything is uniform.
+Here we will convert all variable names to snake case with double underscores 
+reduced to single underscores so that everything is uniform.
 
 ```{r}
 tool_pilot_raw <- clean_names(tool_pilot_raw) %>% 
@@ -504,10 +508,12 @@ link_hits <- link_hits %>%
 # Save data
 
 ```{r}
-write_rds(tool_pilot, here::here("data", "detect_tool_pilot.RDS"))
+write_rds(tool_pilot, here::here("data", "detect_tool_pilot",
+                                 "detect_tool_pilot.RDS"))
 
-write_rds(var_desc, here::here("data", 
+write_rds(var_desc, here::here("data", "detect_tool_pilot", 
                                "detect_tool_pilot_variable_descriptions.RDS"))
-write_rds(link_hits, here::here("data", 
+
+write_rds(link_hits, here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_link_hits_long_format.RDS"))
 ```

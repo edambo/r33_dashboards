@@ -20,8 +20,9 @@ library(crosstalk)
 # Load data
 
 ```{r, message=FALSE}
-pilot_data <- readRDS(here::here("data", "detect_tool_pilot.RDS"))
-var_desc <- readRDS(here::here("data", 
+pilot_data <- readRDS(here::here("data", "detect_tool_pilot",
+                                 "detect_tool_pilot.RDS"))
+var_desc <- readRDS(here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_variable_descriptions.RDS"))
 ```
 
@@ -366,7 +367,7 @@ missing_plot_data <- missing_data %>%
   )
 ```
 
-## Text box data
+## Text box table data
 
 ```{r}
 text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
@@ -376,7 +377,7 @@ text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
 
 text_box_miss <- sort(c(text_box_items, paste0(text_box_items, "_miss")))
 
-text_box_data <- missing_data %>% select(record_id, all_of(text_box_miss))
+text_box_data <- missing_data %>% select(record_id, ri_date, all_of(text_box_miss))
 ```
 
 ```{r}
@@ -393,50 +394,6 @@ for(i in text_box_items){
 }
 ```
 
-### Plot data
-
-```{r}
-text_box_plot_data <- text_box_data %>% 
-  select(record_id, ends_with("filled_3cat_f")) %>%
-  mutate(
-    across(
-      .cols = !record_id,
-      .fns = ~ factor(.x,
-                      levels = c("Filled", "Not filled", "Not applicable")
-                      )
-    )
-  ) %>%
-  tidyr::pivot_longer(!record_id, names_to = "var", values_to = "filled") %>%
-  # Create count column
-  group_by(var, filled) %>%
-  mutate(
-    count = n()
-  ) %>% ungroup() %>% 
-  select(-c(record_id)) %>%
-  distinct() %>%
-  # Remove "filled_3cat_f" suffix to allow labels to match
-  mutate(
-    var = gsub("_filled_3cat_f", "", var)
-  )%>%
-  # Add labels
-  left_join(var_desc, by = c("var" = "variable")) %>%
-  # Ensure the order of labels in dataframe is maintained in the plot
-  mutate(
-    label = factor(label, levels = rev(unique(label)))
-  )
-
-# Ensure that unused categories still show up in plot
-text_box_plot_data <- bind_rows(text_box_plot_data, 
-                  data.frame(filled = setdiff(levels(text_box_plot_data$filled), 
-                                              unique(text_box_plot_data$filled)
-                                              )
-                             )
-                  )
-```
-
-
-## Table data
-
 ```{r}
 text_box_table_data <- text_box_data %>% 
   # select(record_id, ends_with("filled_3cat_f")) %>%
@@ -452,19 +409,24 @@ text_box_table_data <- text_box_data %>%
   tidyr::pivot_longer(cols = ends_with("filled_3cat_f"), 
                       names_to = "var", values_to = "filled") %>%
   filter(filled == "Filled") %>% select(-c(filled, var)) %>%
-  tidyr::pivot_longer(cols = !record_id, 
+  tidyr::pivot_longer(cols = !(c(record_id, ri_date)), 
                       names_to = "var", values_to = "content") %>%
   filter(!is.na(content)) %>% 
   # Add labels
-  left_join(var_desc, by = c("var" = "variable")) %>% select(-c(description)) %>%
-  relocate(label, .after = var) %>% distinct() %>%
-  # Make record_id a factor variable to prevent slider column filter
+  left_join(var_desc, by = c("var" = "variable")) %>% 
+  select(-c(description, var)) %>%
+  relocate(label, .after = ri_date) %>% distinct() %>%
+  # Make the record id and label columns factors to aid filtering
   mutate(
-    record_id = factor(record_id)
+    across(
+      .cols = c(record_id, label),
+      .fns = ~factor(.x)
+    )
   )
 ```
 
-# Other plots
+
+# Univariate visuals data
 
 ```{r}
 shared_plot_data <- dash_data %>% 
@@ -497,7 +459,8 @@ data_subset <- function(vars, level_list){
 
 ```{r}
 ind_em_plot_data <- data_subset(ind_em_vars, 
-                                        level_list = c("Yes", "No", "Unable to assess"))
+                                        level_list = c("Yes", "No", 
+                                                       "Unable to assess"))
 ```
 
 ## Suspect EM
@@ -523,27 +486,17 @@ report_plot_data <- data_subset("ri_report_2cat_f",
                                         level_list = c("Yes", "No"))
 ```
 
-# Interactivity
+
+# Bivariate visuals data
+
 Create individual shared data for each topic
 
-## Indicators of EM Module
+## Indicators of EM Module and Suspect EM
 
 ```{r}
 # Character vector of filters
-filters <- c(
- "Suspect EM", "Self-neglect suspected", "Financial exploitation suspected", 
- "Emotional or psychological abuse suspected", "Physical abuse suspected", 
- "Sexual abuse suspected", "Caregiver neglect suspected", 
- "Abandonment suspected", "Other mistreatment type suspected", 
- "Dont know/ Not sure of mistreatment type", "Intend to report to APS",
- "Other service referral", "Have helpful details"
-)
-
-filters <- stringr::str_wrap(filters, width = 30)
-
-ind_em_shared_data <- dash_data %>% 
-  select(-c(reporting_instrument_complete, ri_date, ri_patient_mrn, 
-            ri_reflection_2cat_f)) %>%
+ind_sus_em_data <- dash_data %>% 
+  select(record_id, all_of(ind_em_vars), suspect_em_2cat_f) %>%
   tidyr::pivot_longer(all_of(ind_em_vars), 
                       names_to = "em_ind_var", values_to = "em_ind_value") %>%
   # Add labels
@@ -555,36 +508,121 @@ ind_em_shared_data <- dash_data %>%
   mutate(
     # Include line breaks in labels
     ind_em_label = stringr::str_wrap(ind_em_label, width = 30),
-    ind_em_label = factor(ind_em_label)
-  ) %>%
-  # Filter where indicators of abuse have values of Yes
-  filter(em_ind_value == "Yes") %>%
-  tidyr::pivot_longer(c("suspect_em_2cat_f", all_of(em_type_vars),
-                        "ri_report_2cat_f", "ri_refer_svcs_2cat_f"), 
-                      names_to = "filter_var", values_to = "filter_value") %>%
-  # Make the value variable a factor
-  mutate(
-    filter_value = factor(filter_value, levels = c("No", "Yes"))
-  ) %>%
-  # Add filter labels
-  left_join(var_desc, by = c("filter_var" = "variable")) %>%
+    ind_em_label = factor(ind_em_label),
+    # Convert NA into a character value
+    em_ind_value = case_when(is.na(em_ind_value) ~ "NA",
+                      TRUE ~ em_ind_value),
+    em_ind_value = factor(em_ind_value, 
+                   levels = c("Yes", "No", "Unable to assess", "NA"),
+                   exclude = NULL
+                   )
+  ) 
+```
+
+## Suspect EM and EM Type
+
+```{r}
+em_type_labs <- c( "Self-neglect suspected", "Financial exploitation suspected", 
+                   "Emotional or psychological abuse suspected", 
+                   "Physical abuse suspected",  "Sexual abuse suspected", 
+                   "Caregiver neglect suspected", "Abandonment suspected", 
+                   "Other mistreatment type suspected", 
+                   "Dont know/ Not sure of mistreatment type")
+```
+
+```{r}
+# Number of cases where EM was suspected
+suspect_em_no <- dash_data %>% filter(suspect_em_2cat_f == "Yes") %>% nrow()
+
+sus_type_em_plot_data <- dash_data %>%
+  select(record_id, suspect_em_2cat_f, all_of(em_type_vars)) %>%
+  tidyr::pivot_longer(all_of(em_type_vars), 
+                      names_to = "em_type_var", values_to = "em_type_value") %>%
+  # Add labels
+  left_join(var_desc, by = c("em_type_var" = "variable")) %>%
+  filter(suspect_em_2cat_f == "Yes") %>%
   # Make `label` a factor variable
   mutate(
-    # Include line breaks in labels
-    label = stringr::str_wrap(label, width = 30),
-    label = factor(label, levels = filters) 
-    )%>%
-  # Create crosstalk shared data object
-  crosstalk::SharedData$new(.)
+    label = factor(label, levels = rev(em_type_labs)),
+    # Convert NA into a character value
+    em_type_value = case_when(is.na(em_type_value) ~ "NA",
+                      TRUE ~ em_type_value),
+    em_type_value = factor(em_type_value, 
+                   levels = c("Yes", "No", "NA"),
+                   exclude = NULL
+                   )
+  ) %>% 
+  relocate(label, .after = suspect_em_2cat_f) %>%
+  select(-c(description, em_type_var, suspect_em_2cat_f)) %>%
+  reframe(
+    count = n(), .by = c(label, em_type_value)
+  ) %>%   
+  # Include counts for factor levels that have zero counts
+  group_by(label) %>%
+  tidyr::complete(em_type_value) %>%
+  ungroup() %>%
+  mutate(
+    count = tidyr::replace_na(count, 0),
+    perc = paste0(format(round((count/suspect_em_no) *100, 1), nsmall = 1), "%")
+    )
 ```
+
+```{r}
+sus_type_em_table_data <- sus_type_em_plot_data %>%
+  mutate(
+    label = factor(label, levels = em_type_labs)
+  ) %>% arrange(label)
+```
+
+```{r}
+every_other_x_rows <- function(df, shade_size){
+  # Get number of rows of df
+  df_rows <- nrow(df)
+  
+  # Create list of row numbers to shade
+  shade_rows <- c()
+  
+  for(r in 0:df_rows){
+    
+    if(shade_size == 1){
+      r_1 <- 1 + 2*r
+      shade_rows <- append(shade_rows, c(r_1))       
+    }else if(shade_size == 2){
+      r_1 <- 3 + 4*r
+      r_2 <- 4 + 4*r 
+      shade_rows <- append(shade_rows, c(r_1, r_2))
+      }else if(shade_size == 3){
+        r_1 <- 4 + 6*r
+        r_2 <- 5 + 6*r 
+        r_3 <- 6 + 6*r 
+        shade_rows <- append(shade_rows, c(r_1, r_2, r_3))
+      }
+  
+  }
+  
+  # Create a binary column to indicate which rows to shade
+  df %>% mutate(
+    shade_col = case_when(
+      row_number() %in% shade_rows == TRUE ~ 1,
+      TRUE ~ 0
+    )
+  ) %>% relocate(shade_col)
+}
+```
+
+```{r}
+sus_type_em_table_data <- every_other_x_rows(sus_type_em_table_data, 3)
+```
+
 
 # Save data
 
 ```{r}
-path <- here::here("data", "dashboard_prepped_data.RData")
+path <- here::here("data", "detect_tool_pilot", "dashboard_prepped_data.RData")
 save(missing_plot_data, text_box_table_data, 
      ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, 
-     report_plot_data, ind_em_shared_data, file = path)
+     report_plot_data, ind_sus_em_data, sus_type_em_plot_data, 
+     sus_type_em_table_data, file = path)
 ```
 
 
