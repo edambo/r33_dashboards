@@ -24,6 +24,8 @@ pilot_data <- readRDS(here::here("data", "detect_tool_pilot",
                                  "detect_tool_pilot.RDS"))
 var_desc <- readRDS(here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_variable_descriptions.RDS"))
+aps_reports_data <- read.csv(here::here("data",
+                                    "aps_report_data.csv"))
 ```
 
 
@@ -486,6 +488,35 @@ report_plot_data <- data_subset("ri_report_2cat_f",
                                         level_list = c("Yes", "No"))
 ```
 
+### Counts for APS reports intended and made
+
+```{r}
+# Intended reports
+reports_intended <- dash_data %>% select(ri_patient_mrn, 
+                                          ri_report_2cat_f) %>% 
+  filter(ri_report_2cat_f == "Yes") %>%
+  # Standardize the MRN to remove trailing zeros at the beginning
+  mutate(
+    std_mrn = gsub("^0+", "", ri_patient_mrn)
+  ) %>% relocate(std_mrn, .after = ri_patient_mrn) 
+
+# Date range
+start_date <- min(as.Date(dash_data$ri_date))
+end_date <- max(as.Date(dash_data$ri_date))
+
+# Reports made
+reports_made <- aps_reports_data %>% 
+  filter(between(as.Date(ar_encounter_date), start_date, end_date)) %>% 
+  # Standardize the MRN to remove trailing zeros at the beginning
+  mutate(
+    std_mrn = gsub("^0+", "", ar_mrn)
+  ) %>% relocate(std_mrn, .after = ar_mrn) %>%
+  filter(std_mrn %in% reports_intended$std_mrn) %>% nrow()
+
+reports_intended <- reports_intended %>% nrow()
+```
+
+
 
 # Bivariate visuals data
 
@@ -621,8 +652,10 @@ sus_type_em_table_data <- every_other_x_rows(sus_type_em_table_data, 3)
 path <- here::here("data", "detect_tool_pilot", "dashboard_prepped_data.RData")
 save(missing_plot_data, text_box_table_data, 
      ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, 
-     report_plot_data, ind_sus_em_data, sus_type_em_plot_data, 
-     sus_type_em_table_data, file = path)
+     report_plot_data, reports_intended, reports_made, ind_sus_em_data, 
+     sus_type_em_plot_data, sus_type_em_table_data, file = path)
+
+rm(list = ls())
 ```
 
 

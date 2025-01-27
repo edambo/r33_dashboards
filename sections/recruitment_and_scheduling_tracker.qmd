@@ -104,7 +104,7 @@ completed_interviews <- data %>% filter(!is.na(gift_card_id)) %>%
 # gauge(completed_interviews, min = 0, max = goal,
 #       sectors = sectors)
 
- gauge_chart(completed_interviews, goal)
+gauge_chart(completed_interviews, goal)
 ```
 
 ### Row

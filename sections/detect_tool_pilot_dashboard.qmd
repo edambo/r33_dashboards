@@ -23,7 +23,8 @@ detect_tool_data_path <- here::here("data", "detect_tool_pilot",
                                     "detect_tool_pilot.RDS")
 link_data_path <- here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_link_hits_long_format.RDS")
-
+aps_reports_data_path <- here::here("data", "detect_tool_pilot",
+                                    "aps_report_data.csv")
 
 pilot_data <- readRDS(detect_tool_data_path)
 link_data <- readRDS(link_data_path)
@@ -40,6 +41,7 @@ load(path)
 
 ```{r}
 source(here::here("r", "format_table.R"))
+source(here::here("r", "gauge_chart.R"))
 ```
 
 <!-- Custom functions -->
@@ -67,9 +69,10 @@ merge_custom <- function(ft, x, columns){
 head_1 <- "This dashboard displays statistics for:\n\n"
 
 side_bar_df <- data.frame(
-  names = c("File Names", "File Names", "Last Modified"),
+  names = c("File Names", "File Names", "File Names", "Last Modified"),
   values = c(basename(detect_tool_data_path), basename(link_data_path),
-               format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
+               basename(aps_reports_data_path), 
+             format(Sys.time(), "%Y-%m-%d %H:%M %Z"))
 ) 
 
 side_bar_df %>% flextable() %>%
@@ -360,6 +363,9 @@ ggplotly(gg_em_type, tooltip = c("text")) %>%
   )
 ```
 
+## Row 
+
+### Column {width="50%"}
 
 ```{r, echo = FALSE}
 #| title: Intent to Report to APS Summary
@@ -383,6 +389,24 @@ ggplotly(gg_report, tooltip = c("text")) %>%
            # range = list(0,10),
            fixedrange = TRUE)
   )
+```
+
+### Column {width="50%"}
+
+```{r, echo = FALSE}
+#| title: Number of Intended APS Reports that Were Made
+
+# sectors <- gaugeSectors(
+#   success = c(goal*(80/100), goal*(100/100)),
+#   warning = c(goal*(60/100), goal*(79/100)),
+#   danger = c(goal*(0/100), goal*(59/100)),
+#   colors = c("#70bfb3", "#ffb700", "#ff625e")
+# )
+# 
+# gauge(completed_interviews, min = 0, max = goal,
+#       sectors = sectors)
+
+ gauge_chart(reports_made, reports_intended)
 ```
 
 ## Row 
@@ -411,7 +435,8 @@ gg_ind_sus_em <- ggplot(ind_sus_em_data,
   theme_bw() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank()) +
-  facet_wrap(~ suspect_em_2cat_f, labeller = as_labeller(facet_labels))
+  facet_wrap(~ suspect_em_2cat_f, labeller = as_labeller(facet_labels), 
+  scales = "free_x")
 
 ggplotly(gg_ind_sus_em, tooltip = c("text")) %>%
     layout(

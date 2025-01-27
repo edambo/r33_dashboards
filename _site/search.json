@@ -102,7 +102,7 @@
     "href": "data_management/data_02_detect_tool_pilot_test.html#intent-to-report-to-aps",
     "title": "Create variables for visualizing the DETECT tool pilot study data",
     "section": "Intent to Report to APS",
-    "text": "Intent to Report to APS\n\nreport_plot_data &lt;- data_subset(\"ri_report_2cat_f\", \n                                        level_list = c(\"Yes\", \"No\"))"
+    "text": "Intent to Report to APS\n\nreport_plot_data &lt;- data_subset(\"ri_report_2cat_f\", \n                                        level_list = c(\"Yes\", \"No\"))\n\n\nCounts for APS reports intended and made\n\n# Intended reports\nreports_intended &lt;- dash_data %&gt;% select(ri_patient_mrn, \n                                          ri_report_2cat_f) %&gt;% \n  filter(ri_report_2cat_f == \"Yes\") %&gt;%\n  # Standardize the MRN to remove trailing zeros at the beginning\n  mutate(\n    std_mrn = gsub(\"^0+\", \"\", ri_patient_mrn)\n  ) %&gt;% relocate(std_mrn, .after = ri_patient_mrn) \n\n# Date range\nstart_date &lt;- min(as.Date(dash_data$ri_date))\nend_date &lt;- max(as.Date(dash_data$ri_date))\n\n# Reports made\nreports_made &lt;- aps_reports_data %&gt;% \n  filter(between(as.Date(ar_encounter_date), start_date, end_date)) %&gt;% \n  # Standardize the MRN to remove trailing zeros at the beginning\n  mutate(\n    std_mrn = gsub(\"^0+\", \"\", ar_mrn)\n  ) %&gt;% relocate(std_mrn, .after = ar_mrn) %&gt;%\n  filter(std_mrn %in% reports_intended$std_mrn) %&gt;% nrow()\n\nreports_intended &lt;- reports_intended %&gt;% nrow()"
   },
   {
     "objectID": "data_management/data_02_detect_tool_pilot_test.html#indicators-of-em-module-and-suspect-em",
