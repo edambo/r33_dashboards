@@ -44,6 +44,11 @@ View(aps_lab[51:64])
 ```
 
 ```{r}
+var_desc <- data.frame(variable = names(aps),
+                       description = names(aps_lab)
+                       # label = labels
+                       ) 
 
+write.csv(var_desc, here::here("data", "aps_var_descs.csv"))
 ```
 
