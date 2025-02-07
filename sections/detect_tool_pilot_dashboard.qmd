@@ -279,13 +279,18 @@ layout(
 
 ```{r, echo = FALSE}
 #| title: Textbox Data
-DT::datatable(text_box_table_data, options = list(autoWidth = TRUE), 
-              colnames = c("Record ID", "Date", "Variable Label", 
+DT::datatable(text_box_table_data, 
+              options = list(autoWidth = TRUE, 
+                             columnDefs = list(
+                               list(visible=FALSE, 
+                                    targets = c("ri_institution_7cat_f")))), 
+              colnames = c("Record ID", "Date", "Institution", "Variable Label", 
                            "Text Box Content"),
               filter = list(
                 position = 'top', clear = FALSE)
 )
 ```
+
 
 ## Row
 
@@ -365,7 +370,7 @@ ggplotly(gg_em_type, tooltip = c("text")) %>%
 
 ## Row 
 
-### Column {width="50%"}
+### Column {width="60%"}
 
 ```{r, echo = FALSE}
 #| title: Intent to Report to APS Summary
@@ -377,7 +382,7 @@ gg_report <- ggplot(report_plot_data,
   scale_fill_manual("Legend",
                     values = c("Yes" = "#21BA97", 
                                "No" = "#9eccc1",
-                               "NA" = "#024536"), drop = FALSE) +
+                               "EM not suspected" = "#024536"), drop = FALSE) +
   theme_classic() + 
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
@@ -391,22 +396,12 @@ ggplotly(gg_report, tooltip = c("text")) %>%
   )
 ```
 
-### Column {width="50%"}
+### Column {width="40%"}
 
 ```{r, echo = FALSE}
 #| title: Number of Intended APS Reports that Were Made
 
-# sectors <- gaugeSectors(
-#   success = c(goal*(80/100), goal*(100/100)),
-#   warning = c(goal*(60/100), goal*(79/100)),
-#   danger = c(goal*(0/100), goal*(59/100)),
-#   colors = c("#70bfb3", "#ffb700", "#ff625e")
-# )
-# 
-# gauge(completed_interviews, min = 0, max = goal,
-#       sectors = sectors)
-
- gauge_chart(reports_made, reports_intended)
+gauge_chart(reports_made, reports_intended)
 ```
 
 ## Row

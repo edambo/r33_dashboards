@@ -317,8 +317,6 @@ missing_data <- pilot_miss(df = missing_data, var = var,
 
 # Prepare Missingness data for visualization
 
-## All data
-
 ```{r}
 label_order <- c(
   "Brief note", "Have helpful details", "Specify other service", 
@@ -334,95 +332,132 @@ label_order <- c(
   "Absence of necessities ", "Clinician name", "Institution", "Patient MRN"
 )
 
-missing_plot_data <- missing_data %>% 
-  # Select only the record id and the missng data variables
-  select(record_id, ends_with("_miss")) %>%
-  # Remove "_miss" suffix
-  rename_with(~gsub("_miss", "", .x)) %>%
-  tidyr::pivot_longer(!record_id, names_to = "var", values_to = "missingness") %>%
-  # Recode missingness
-  mutate(
-    missingness_3cat_f = case_when(
-      missingness == 1 ~ "Missing",
-      missingness == 0 ~ "Not missing",
-      is.na(missingness) ~ "Not applicable"
-    ),
-    missingness_3cat_f = factor(missingness_3cat_f, 
-                     levels = c("Missing", "Not missing", "Not applicable")
-                     )
-  ) %>%
-  # Create count column
-  group_by(var, missingness_3cat_f) %>%
-  mutate(
-    count = n()
-  ) %>% ungroup() %>% 
-  select(-c(record_id)) %>%
-  distinct() %>% 
-  # Add labels
-  left_join(var_desc, by = c("var" = "variable")) %>%
-  # Create label for aggregate variable "ri_em_type"
-  mutate(
-    label = case_when(
-      var == "ri_em_type" ~ "EM type",
-      TRUE ~ label
-    )
-  ) %>% 
-  mutate(
-    # Ensure the correct order of labels is maintained in the plot
-    label = factor(label, levels = label_order)
-    
-  )
+# Function for creating missing plot data for all and each institution
+
+create_missing_plot_data <- function(data){
+  data %>% 
+    # Select only the record id and the missng data variables
+    select(record_id, ends_with("_miss")) %>%
+    # Remove "_miss" suffix
+    rename_with(~gsub("_miss", "", .x)) %>%
+    tidyr::pivot_longer(!record_id, names_to = "var", values_to = "missingness") %>%
+    # Recode missingness
+    mutate(
+      missingness_3cat_f = case_when(
+        missingness == 1 ~ "Missing",
+        missingness == 0 ~ "Not missing",
+        is.na(missingness) ~ "Not applicable"
+      ),
+      missingness_3cat_f = factor(missingness_3cat_f, 
+                       levels = c("Missing", "Not missing", "Not applicable")
+                       )
+    ) %>%
+    # Create count column
+    group_by(var, missingness_3cat_f) %>%
+    mutate(
+      count = n()
+    ) %>% ungroup() %>% 
+    select(-c(record_id)) %>%
+    distinct() %>% 
+    # Add labels
+    left_join(var_desc, by = c("var" = "variable")) %>%
+    # Create label for aggregate variable "ri_em_type"
+    mutate(
+      label = case_when(
+        var == "ri_em_type" ~ "EM type",
+        TRUE ~ label
+      )
+    ) %>% 
+    mutate(
+      # Ensure the correct order of labels is maintained in the plot
+      label = factor(label, levels = label_order)
+    )  
+}
+  
+
 ```
 
-## Text box table data
+## All
+
+```{r}
+missing_plot_data <- create_missing_plot_data(missing_data)
+```
+
+## Baylor
+
+```{r}
+baylor_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  create_missing_plot_data()
+```
+
+## Johns Hopkins
+
+```{r}
+jh_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  create_missing_plot_data()
+```
+
+## UCSF
+
+```{r}
+ucsf_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  create_missing_plot_data()
+```
+
+## UAB
+
+```{r}
+uab_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  create_missing_plot_data()
+```
+
+## UTSW
+
+```{r}
+utsw_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "UT Southwestern - COVE") %>%
+  create_missing_plot_data()
+```
+
+## LBJ
+
+```{r}
+lbj_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  create_missing_plot_data()
+```
+
+## UTP
+
+```{r}
+utp_missing_plot_data <-  missing_data %>% 
+  filter(ri_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  create_missing_plot_data()
+```
+
+# Text box table data
 
 ```{r}
 text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
                     "ri_patient_assess", "ri_em_no_reason", "ri_em_reason", 
                     "ri_em_type_other", "ri_aps_no_reason", 
                     "ri_refer_svcs_specify", "ri_reflection_notes")
-
-text_box_miss <- sort(c(text_box_items, paste0(text_box_items, "_miss")))
-
-text_box_data <- missing_data %>% select(record_id, ri_date, all_of(text_box_miss))
 ```
 
 ```{r}
-# For each text box variable, create a variable that shows whether or not there is a value
-for(i in text_box_items){
-  text_box_data <- text_box_data %>%
-    mutate(
-      "{i}_filled_3cat_f" := case_when(
-        .data[[paste0(i, "_miss")]] == 0 ~ "Filled",
-        .data[[paste0(i, "_miss")]] == 1 ~ "Not filled",
-        is.na(.data[[paste0(i, "_miss")]]) ~ "Not applicable"
-      )
-    ) %>% relocate(paste0(i, "_filled_3cat_f"), .after = i)
-}
-```
-
-```{r}
-text_box_table_data <- text_box_data %>% 
-  # select(record_id, ends_with("filled_3cat_f")) %>%
-  select(-c(ends_with("_miss"))) %>%
-  mutate(
-    across(
-      .cols = ends_with("filled_3cat_f"),
-      .fns = ~ factor(.x,
-                      levels = c("Filled", "Not filled", "Not applicable")
-                      )
-    )
-  ) %>%
-  tidyr::pivot_longer(cols = ends_with("filled_3cat_f"), 
-                      names_to = "var", values_to = "filled") %>%
-  filter(filled == "Filled") %>% select(-c(filled, var)) %>%
-  tidyr::pivot_longer(cols = !(c(record_id, ri_date)), 
+text_box_table_data <- missing_data %>% 
+  select(record_id, ri_date, ri_institution_7cat_f, all_of(text_box_items)) %>%
+  tidyr::pivot_longer(cols = all_of(text_box_items), 
                       names_to = "var", values_to = "content") %>%
   filter(!is.na(content)) %>% 
   # Add labels
   left_join(var_desc, by = c("var" = "variable")) %>% 
   select(-c(description, var)) %>%
-  relocate(label, .after = ri_date) %>% distinct() %>%
+  relocate(label, .after = ri_institution_7cat_f) %>% distinct() %>%
   # Make the record id and label columns factors to aid filtering
   mutate(
     across(
@@ -489,15 +524,50 @@ em_type_plot_data <- data_subset(em_type_vars,
 ## Intent to Report to APS
 
 ```{r}
-report_plot_data <- data_subset("ri_report_2cat_f", 
-                                        level_list = c("Yes", "No"))
+report_plot_data <- dash_data %>% 
+  select(record_id, ri_institution_7cat_f, ri_clinician_id, suspect_em_2cat_f,
+         ri_report_2cat_f) %>%
+  tidyr::pivot_longer(ri_report_2cat_f, 
+                      names_to = "var", values_to = "value") %>% 
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable"))  %>%
+    mutate(
+      # Convert NA into a character value
+      # Distinguish between true NA and EM not suspected
+      value = case_when(is.na(value) & suspect_em_2cat_f == "Yes" ~ "NA",
+                        is.na(value) & 
+                          suspect_em_2cat_f != "Yes" ~ "EM not suspected",
+                        TRUE ~ value),
+      value = factor(value, 
+                     levels = c("Yes", "No", "EM not suspected", "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in dataframe is maintained in the plot
+      label = factor(label, levels = rev(unique(label)))
+    )
+ 
 ```
 
 ### Counts for APS reports intended and made
 
 ```{r}
+institution_long_lat <- data.frame(
+  institution = c(
+    "Baylor College of Medicine - BT House Calls",  "Johns Hopkins - JHOME", 
+    "UCSF - Care at Home Program", "University of Alabama - UAB House Calls",
+    "UT Southwestern - COVE", "UTH Houston"
+  ),
+  longitude = c(29.71052761800321, 39.33008377311541, 37.7669884176172, 
+                33.502461653045216, 32.815820023948795, 29.703289163249107),
+  latitude = c(-95.39623789990478, -76.62051772290135, -122.45905392951434,
+               -86.80513736700209, -96.8448134037558, -95.40319950387807)
+)
+```
+
+
+```{r}
 # Intended reports
-reports_intended <- dash_data %>% select(ri_patient_mrn, 
+reports_intended <- dash_data %>% select(ri_patient_mrn, ri_institution_7cat_f, 
                                           ri_report_2cat_f) %>% 
   # Exclude fake patient
   filter(ri_patient_mrn != "Julia_Test_Patient1") %>%
@@ -597,42 +667,6 @@ ind_sus_em_table_data <- ind_sus_em_plot_data %>%
 ```
 
 ```{r}
-every_other_x_rows <- function(df, shade_size){
-  # Get number of rows of df
-  df_rows <- nrow(df)
-  
-  # Create list of row numbers to shade
-  shade_rows <- c()
-  
-  for(r in 0:df_rows){
-    
-    if(shade_size == 1){
-      r_1 <- 1 + 2*r
-      shade_rows <- append(shade_rows, c(r_1))       
-    }else if(shade_size == 2){
-      r_1 <- 3 + 4*r
-      r_2 <- 4 + 4*r 
-      shade_rows <- append(shade_rows, c(r_1, r_2))
-      }else if(shade_size == 3){
-        r_1 <- 4 + 6*r
-        r_2 <- 5 + 6*r 
-        r_3 <- 6 + 6*r 
-        shade_rows <- append(shade_rows, c(r_1, r_2, r_3))
-      }
-  
-  }
-  
-  # Create a binary column to indicate which rows to shade
-  df %>% mutate(
-    shade_col = case_when(
-      row_number() %in% shade_rows == TRUE ~ 1,
-      TRUE ~ 0
-    )
-  ) %>% relocate(shade_col)
-}
-```
-
-```{r}
 ind_sus_em_table_data <- add_shade_column_x_rows(ind_sus_em_table_data, 4)
 ```
 
@@ -698,7 +732,9 @@ sus_type_em_table_data <- add_shade_column_x_rows(sus_type_em_table_data, 3)
 
 ```{r}
 path <- here::here("data", "detect_tool_pilot", "dashboard_prepped_data.RData")
-save(missing_plot_data, text_box_table_data, 
+save(missing_plot_data, baylor_missing_plot_data, jh_missing_plot_data,
+     ucsf_missing_plot_data, uab_missing_plot_data, utsw_missing_plot_data,
+     lbj_missing_plot_data, utp_missing_plot_data, text_box_table_data, 
      ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, 
      report_plot_data, reports_intended, reports_made, ind_sus_em_plot_data, 
      ind_sus_em_table_data, sus_type_em_plot_data, sus_type_em_table_data, 
