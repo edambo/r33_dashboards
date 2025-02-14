@@ -20,17 +20,17 @@ library(DT)
 
 ```{r, include = FALSE}
 detect_tool_data_path <- here::here("data", "detect_tool_pilot",
-                                    "detect_tool_pilot.RDS")
+                                    "detect_tool_pilot_cleaned.RDS")
 link_data_path <- here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_link_hits_long_format.RDS")
-aps_reports_data_path <- here::here("data", "detect_tool_pilot",
-                                    "aps_report_data.csv")
+aps_reports_data_path <- here::here("data", "aps_reports",
+                                    "aps_reports_cleaned.RDS")
 
 pilot_data <- readRDS(detect_tool_data_path)
 link_data <- readRDS(link_data_path)
 
-var_desc <- readRDS(here::here("data", "detect_tool_pilot", 
-                               "detect_tool_pilot_variable_descriptions.RDS"))
+var_desc <- readRDS(here::here("data_management", "detect_tool_pilot", 
+                               "variable_descriptions.RDS"))
 
 path <- here::here("data", "detect_tool_pilot",
                    "dashboard_prepped_data.RData")
@@ -97,8 +97,8 @@ side_bar_df %>% flextable() %>%
 subjects <- pilot_data %>% select(ri_patient_mrn) %>% unique() %>% nrow()
 clinicians <- pilot_data %>% select(ri_clinician_id_name) %>% unique() %>% nrow()
 survey_responses <- pilot_data %>% nrow()
-time_period <- paste(min(as.Date(pilot_data$ri_date)), "to", 
-                     max(as.Date(pilot_data$ri_date)))
+time_period <- paste(min(as.Date(pilot_data$ri_timestamp_start)), "to", 
+                     max(as.Date(pilot_data$timestamp_end)))
 
 head_2 <- "This data references:\n\n"
 
@@ -145,20 +145,7 @@ text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
                     "ri_refer_svcs_specify", "ri_reflection_notes")
 ```
 
-## Row {height= "20%" .fill}
-
-```{r}
-#| echo: false
-#| title: Unique MRNs
-#| content: valuebox
-
-# Create value box  
-list(
-  icon = "person",
-  color = "vb-blue",
-  value = subjects
-)
-```
+## Row {height= "5%" .fill}
 
 <!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
 
@@ -175,30 +162,48 @@ started_screenings <- pilot_data %>% filter(if_any(
 # Create value box  
 list(
   icon = "ui-checks-grid",
-  color = "vb-blue",
+  color = "vb-green",
   value = started_screenings
 )
 ```
 
-<!-- Completed screening is defined as having values for the MRN and EM status impression. -->
+<!-- Completed screening is defined as when all required fields are completed. -->
 
 ```{r}
 #| echo: false
 #| title: Screenings Completed
 #| content: valuebox
 
-completed_screenings <- pilot_data %>% filter(if_all(
-  .cols = c(ri_patient_mrn, suspect_em_2cat),
-  .fns = ~!is.na(.x)
-)) %>% nrow()
+# completed_screenings <- pilot_data %>% filter(if_all(
+#   .cols = c(ri_patient_mrn, suspect_em_2cat),
+#   .fns = ~!is.na(.x)
+# )) %>% nrow()
+
+completed_screenings <- pilot_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% nrow()
 
 # Create value box  
 list(
   icon = "check2-circle",
-  color = "vb-blue",
+  color = "vb-green",
   value = completed_screenings
 )
 ```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = subjects
+)
+```
+
+## Row {height= "5%" .fill}
 
 ```{r}
 #| echo: false
@@ -213,12 +218,59 @@ em_status_incomplete <- pilot_data %>% filter(if_all(
 # Create value box  
 list(
   icon = "clipboard2-x",
-  color = "vb-blue",
+  color = "vb-green",
   value = em_status_incomplete
 )
 ```
 
-<!-- One of the days (11/11) could not be viewed. This impacted the reporting guidelines for TX link. The number of clicks could have either any number from 0 to 3 for that day.-->
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+suspect_em_count <- pilot_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+ri_count <- reports_intended %>% nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+irm_count <- intended_reports_made %>% nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = irm_count
+)
+```
 
 ```{r}
 #| echo: false
@@ -231,7 +283,7 @@ rg_link_clicks <- link_data %>% filter(grepl("^detect_", link)) %>%
 # Create value box  
 list(
   icon = "link",
-  color = "vb-blue",
+  color = "vb-green",
   value = rg_link_clicks
 )
 ```
@@ -247,7 +299,7 @@ def_link_clicks <- link_data %>% filter(grepl("elder_abuse_definitions", link)) 
 # Create value box  
 list(
   icon = "link",
-  color = "vb-blue",
+  color = "vb-green",
   value = def_link_clicks
 )
 ```
@@ -283,7 +335,7 @@ DT::datatable(text_box_table_data,
               options = list(autoWidth = TRUE, 
                              columnDefs = list(
                                list(visible=FALSE, 
-                                    targets = c("ri_institution_7cat_f")))), 
+                                    targets = c("calc_institution_7cat_f")))), 
               colnames = c("Record ID", "Date", "Institution", "Variable Label", 
                            "Text Box Content"),
               filter = list(
@@ -298,10 +350,10 @@ DT::datatable(text_box_table_data,
 
 ```{r}
 #| title: Indicators of EM Module Summary
-gg_ind_em <- ggplot(ind_em_plot_data, 
-                      aes(y = label, fill = value, 
-                          text = paste0("Count: ", after_stat(count)))) +
-  geom_bar(show.legend=FALSE) +
+gg_ind_em <- ggplot(ind_em_plot_data_all, aes(x = count, y = label, fill = value, 
+                          text = paste0("Count: ", count, "\nProportion: ",
+                                        perc))) +
+  geom_bar(stat = "identity", show.legend=FALSE) +
   scale_fill_manual("Legend",
                     values = c("Yes" = "#219ebc", 
                                "No" = "#AFD5E0",
@@ -321,36 +373,13 @@ ggplotly(gg_ind_em, tooltip = c("text")) %>%
 ```
 
 ```{r, echo = FALSE}
-#| title: Suspect EM Summary
-
-gg_sus_em <- ggplot(suspect_em_plot_data, 
-                      aes(y = label, fill = value, 
-                          text = paste0("Count: ", after_stat(count)))) +
-  geom_bar(show.legend=TRUE) +
-  scale_fill_manual("Legend",
-                    values = c("Yes" = "#BAAE21", 
-                               "No" = "#CCC99E",
-                               "NA" = "#454002"), drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
-
-ggplotly(gg_sus_em, tooltip = c("text")) %>%
-  layout(
-         xaxis = list(fixedrange = TRUE),
-         yaxis = list(
-           # range = list(0,10),
-           fixedrange = TRUE)
-  )
-```
-
-```{r, echo = FALSE}
 #| title: EM Type Summary
 
-gg_em_type <- ggplot(em_type_plot_data, 
-                      aes(y = label, fill = value, 
-                          text = paste0("Count: ", after_stat(count)))) +
-  geom_bar(show.legend=TRUE) +
+gg_em_type <- ggplot(em_type_plot_data_all, 
+                      aes(x = count, y = label, fill = value, 
+                          text = paste0("Count: ", count, "\nProportion: ",
+                                        perc))) +
+  geom_bar(stat = "identity", show.legend=FALSE) +
   scale_fill_manual("Legend",
                     values = c("Yes" = "#BA21B3", 
                                "No" = "#CC9EC9",
@@ -366,42 +395,6 @@ ggplotly(gg_em_type, tooltip = c("text")) %>%
            # range = list(0,10),
            fixedrange = TRUE)
   )
-```
-
-## Row 
-
-### Column {width="60%"}
-
-```{r, echo = FALSE}
-#| title: Intent to Report to APS Summary
-
-gg_report <- ggplot(report_plot_data, 
-                      aes(y = label, fill = value, 
-                          text = paste0("Count: ", after_stat(count)))) +
-  geom_bar(show.legend=TRUE) +
-  scale_fill_manual("Legend",
-                    values = c("Yes" = "#21BA97", 
-                               "No" = "#9eccc1",
-                               "EM not suspected" = "#024536"), drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
-
-ggplotly(gg_report, tooltip = c("text")) %>%
-  layout(
-         xaxis = list(fixedrange = TRUE),
-         yaxis = list(
-           # range = list(0,10),
-           fixedrange = TRUE)
-  )
-```
-
-### Column {width="40%"}
-
-```{r, echo = FALSE}
-#| title: Number of Intended APS Reports that Were Made
-
-gauge_chart(reports_made, reports_intended)
 ```
 
 ## Row
@@ -443,14 +436,13 @@ ggplotly(gg_ind_sus_em, tooltip = c("text")) %>%
 
 ```{r, echo = FALSE}
 #| title: Table
-ind_sus_em_table_data %>%
-  DT::datatable(., class = list(stripe = FALSE), 
-                options = list(autoWidth = TRUE, columnDefs = list(list(
-              targets = 1,  # Column index starts from 0
-              visible = FALSE
-            ))), 
-              colnames = c("Shade column", "Abuse Type Suspected", "Response", "N", 
-                           "Proportion"),
+DT::datatable(ind_sus_em_table_data, class = list(stripe = FALSE),
+              options = list(autoWidth = TRUE, 
+                             columnDefs = list(
+                               list(visible=FALSE, 
+                                    targets = c("shade_col")))), 
+              colnames = c("Shade column","EM Suspected",  "EM Type Suspected", 
+                           "Response", "N", "Proportion"),
               filter = list(
                 position = 'top', clear = FALSE)
 ) %>% formatStyle(
@@ -459,6 +451,7 @@ ind_sus_em_table_data %>%
   backgroundColor = styleEqual(c(0, 1), c('transparent', '#EEEEEE'))
 )
 ```
+
 
 ## Row
 

@@ -137,6 +137,8 @@ tool_pilot <- tool_pilot %>%
 
 ## Clinician names
 
+Combine clinician names across all institutions into a single column
+
 ```{r}
 clinician_names <- c("ri_clinician_bcm", "ri_clinician_bcm_oth", 
                      "ri_clinician_jh", "ri_clinician_jh_oth", 
@@ -509,10 +511,10 @@ link_hits <- link_hits %>%
 
 ```{r}
 write_rds(tool_pilot, here::here("data", "detect_tool_pilot",
-                                 "detect_tool_pilot.RDS"))
+                                 "detect_tool_pilot_cleaned.RDS"))
 
-write_rds(var_desc, here::here("data", "detect_tool_pilot", 
-                               "detect_tool_pilot_variable_descriptions.RDS"))
+write_rds(var_desc, here::here("data_management", "detect_tool_pilot", 
+                               "variable_descriptions.RDS"))
 
 write_rds(link_hits, here::here("data", "detect_tool_pilot",
                                "detect_tool_pilot_link_hits_long_format.RDS"))

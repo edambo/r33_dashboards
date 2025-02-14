@@ -76,5 +76,14 @@
   },
   "data_management/data_01_aps_reports.qmd": {
     "data_01_aps_reports.html": "0598c308"
+  },
+  "data_management/aps_reports/data_01_aps_reports.qmd": {
+    "data_01_aps_reports.html": "879f2470"
+  },
+  "data_management/detect_tool_pilot/data_01_detect_tool_pilot_test.qmd": {
+    "data_01_detect_tool_pilot_test.html": "7aac10e5"
+  },
+  "data_management/detect_tool_pilot/data_02_detect_tool_pilot_test.qmd": {
+    "data_02_detect_tool_pilot_test.html": "3a740ca2"
   }
 }

@@ -20,12 +20,13 @@ library(crosstalk)
 # Load data and custom functions
 
 ```{r, message=FALSE}
-pilot_data <- readRDS(here::here("data", "detect_tool_pilot",
-                                 "detect_tool_pilot.RDS"))
-var_desc <- readRDS(here::here("data", "detect_tool_pilot",
-                               "detect_tool_pilot_variable_descriptions.RDS"))
-aps_reports_data <- read.csv(here::here("data",
-                                    "aps_report_data.csv"))
+dt_data_path <- here::here("data", "detect_tool_pilot",
+                                 "detect_tool_pilot_cleaned.RDS")
+dt_data <- readRDS(dt_data_path)
+var_desc <- readRDS(here::here("data_management", "detect_tool_pilot", 
+                               "variable_descriptions.RDS"))
+aps_reports_data <- readRDS(here::here("data", "aps_reports",
+                                    "aps_reports_cleaned.RDS"))
 ```
 
 
@@ -33,13 +34,28 @@ aps_reports_data <- read.csv(here::here("data",
 source(here::here("r", "add_shade_column_x_rows.R"))
 ```
 
+# Set institution 
+For the actual data, calc_institution_7cat_f will be the appropriate variable for institution, but this variable was created after the pilot data had been collected and is empty in this dataset. It will be equal to the value of ri_institution_7cat_f only for the pilot data. This code will not be necessary for the actual data.
+
+```{r}
+dt_data <- dt_data %>%
+  mutate(
+    calc_institution_7cat_f = 
+      case_when(
+        basename(dt_data_path) == "detect_tool_pilot_cleaned.RDS" ~ 
+          ri_institution_7cat_f, 
+        TRUE ~ calc_institution_7cat_f
+        )
+  )
+```
+
 
 # Select variables useful for the dashboard
 
 ```{r}
-dash_vars <- c("record_id", "reporting_instrument_complete", "ri_date", 
-               "ri_patient_mrn", "ri_institution_7cat_f", "ri_clinician_id", 
-               "ri_clinician_id_name", "ri_necessities_3cat_f", 
+dash_vars <- c("record_id", "reporting_instrument_complete", "ri_timestamp_start",
+               "timestamp_end", "ri_patient_mrn", "calc_institution_7cat_f", 
+               "ri_clinician_id", "ri_clinician_id_name", "ri_necessities_3cat_f", 
                "ri_environment_3cat_f", "ri_environment_un_reason", 
                "ri_caregiver_3cat_f", "ri_caregiver_un_reason_2cat_f", 
                "ri_caregiver_oth", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
@@ -53,8 +69,6 @@ dash_vars <- c("record_id", "reporting_instrument_complete", "ri_date",
                "ri_aps_no_reason", "ri_refer_svcs_2cat_f", 
                "ri_refer_svcs_specify", "ri_reflection_2cat_f", 
                "ri_reflection_notes")
-
-dash_data <- pilot_data %>% select(all_of(dash_vars))
 ```
 
 ```{r}
@@ -68,7 +82,7 @@ ind_em_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f",
 # Missingness data
 
 ```{r}
-missing_data <- dash_data
+missing_data <- dt_data %>% select(all_of(dash_vars))
 ```
 
 ## Create fuction to generate missingness variables
@@ -76,7 +90,7 @@ missing_data <- dash_data
 This function will also take branching/ skip logic into consideration.
 
 ```{r}
-pilot_miss <- function(df, var, condition = NULL){
+dt_miss <- function(df, var, condition = NULL){
   if(is.null(condition)){
     new_df <- df %>% 
       mutate(
@@ -103,7 +117,7 @@ pilot_miss <- function(df, var, condition = NULL){
 ## Variables with no conditional arguments/ skip logic
 
 ```{r}
-vars <- c("ri_patient_mrn", "ri_institution_7cat_f", "ri_clinician_id_name", 
+vars <- c("ri_patient_mrn", "calc_institution_7cat_f", "ri_clinician_id_name", 
           "ri_necessities_3cat_f", "ri_environment_3cat_f", 
           "ri_caregiver_3cat_f", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
           "ri_anxious_3cat_f", "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
@@ -114,7 +128,7 @@ condition <- NULL
 
 ```{r}
 for(var in vars){
-  missing_data <- pilot_miss(df = missing_data, var = var, 
+  missing_data <- dt_miss(df = missing_data, var = var, 
                      condition = condition)  
 }
 ```
@@ -132,7 +146,7 @@ condition <- "if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to as
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -144,7 +158,7 @@ condition <- "ri_caregiver_3cat_f == 'Unable to assess'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition) 
 ```
 
@@ -156,7 +170,7 @@ condition <- "ri_caregiver_un_reason_2cat_f == 'Other reason'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -173,7 +187,7 @@ condition <- "if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to as
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -193,7 +207,7 @@ condition <- "suspect_em_2cat_f == 'No' & if_any(.cols = all_of(condition_vars),
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -213,7 +227,7 @@ condition <- "suspect_em_2cat_f == 'Yes' & if_all(.cols = all_of(condition_vars)
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -250,7 +264,7 @@ condition <- "ri_em_type_98_2cat_f == 'Checked'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -262,7 +276,7 @@ condition <- "suspect_em_2cat_f == 'Yes'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -274,7 +288,7 @@ condition <- "ri_report_2cat_f == 'No'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -286,7 +300,7 @@ condition <- "suspect_em_2cat_f == 'Yes'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -298,7 +312,7 @@ condition <- "ri_refer_svcs_2cat_f == 'Yes'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition) 
 ```
 
@@ -310,7 +324,7 @@ condition <- "ri_reflection_2cat_f == 'Yes'"
 ```
 
 ```{r}
-missing_data <- pilot_miss(df = missing_data, var = var, 
+missing_data <- dt_miss(df = missing_data, var = var, 
                    condition = condition)
 ```
 
@@ -387,7 +401,7 @@ missing_plot_data <- create_missing_plot_data(missing_data)
 
 ```{r}
 baylor_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  filter(calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
   create_missing_plot_data()
 ```
 
@@ -395,7 +409,7 @@ baylor_missing_plot_data <-  missing_data %>%
 
 ```{r}
 jh_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  filter(calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
   create_missing_plot_data()
 ```
 
@@ -403,7 +417,7 @@ jh_missing_plot_data <-  missing_data %>%
 
 ```{r}
 ucsf_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  filter(calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
   create_missing_plot_data()
 ```
 
@@ -411,7 +425,7 @@ ucsf_missing_plot_data <-  missing_data %>%
 
 ```{r}
 uab_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  filter(calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
   create_missing_plot_data()
 ```
 
@@ -419,7 +433,7 @@ uab_missing_plot_data <-  missing_data %>%
 
 ```{r}
 utsw_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "UT Southwestern - COVE") %>%
+  filter(calc_institution_7cat_f == "UT Southwestern - COVE") %>%
   create_missing_plot_data()
 ```
 
@@ -427,7 +441,7 @@ utsw_missing_plot_data <-  missing_data %>%
 
 ```{r}
 lbj_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  filter(calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
   create_missing_plot_data()
 ```
 
@@ -435,9 +449,10 @@ lbj_missing_plot_data <-  missing_data %>%
 
 ```{r}
 utp_missing_plot_data <-  missing_data %>% 
-  filter(ri_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  filter(calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
   create_missing_plot_data()
 ```
+
 
 # Text box table data
 
@@ -450,30 +465,50 @@ text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
 
 ```{r}
 text_box_table_data <- missing_data %>% 
-  select(record_id, ri_date, ri_institution_7cat_f, all_of(text_box_items)) %>%
+  select(record_id, timestamp_end, calc_institution_7cat_f, 
+         all_of(text_box_items)) %>%
   tidyr::pivot_longer(cols = all_of(text_box_items), 
                       names_to = "var", values_to = "content") %>%
   filter(!is.na(content)) %>% 
   # Add labels
   left_join(var_desc, by = c("var" = "variable")) %>% 
   select(-c(description, var)) %>%
-  relocate(label, .after = ri_institution_7cat_f) %>% distinct() %>%
-  # Make the record id and label columns factors to aid filtering
+  relocate(label, .after = calc_institution_7cat_f) %>% distinct() %>%
   mutate(
+    # Convert date-time variable to date variable
+    date = as.Date(timestamp_end),
+    # Make the record id and label columns factors to aid filtering
     across(
       .cols = c(record_id, label),
       .fns = ~factor(.x)
     )
-  )
+  ) %>% select(-c(timestamp_end)) %>%
+  relocate(date, .after = record_id)
 ```
 
 
 # Univariate visuals data
 
 ```{r}
-shared_plot_data <- dash_data %>% 
-  select(-c(reporting_instrument_complete, ri_date, ri_patient_mrn)) %>%
-  tidyr::pivot_longer(-c(record_id, ri_institution_7cat_f, ri_clinician_id), 
+plot_vars <- c("record_id", "calc_institution_7cat_f", "ri_necessities_3cat_f", 
+               "ri_environment_3cat_f", "ri_environment_un_reason", 
+               "ri_caregiver_3cat_f", "ri_caregiver_un_reason_2cat_f", 
+               "ri_caregiver_oth", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
+               "ri_anxious_3cat_f", "ri_prohibited_3cat_f", 
+               "ri_unmet_needs_3cat_f", "ri_injuries_3cat_f", 
+               "ri_patient_assess", "suspect_em_2cat_f", "ri_em_no_reason", 
+               "ri_em_reason", "ri_em_type_1_2cat_f", "ri_em_type_2_2cat_f", 
+               "ri_em_type_3_2cat_f", "ri_em_type_4_2cat_f", "ri_em_type_5_2cat_f", 
+               "ri_em_type_6_2cat_f", "ri_em_type_7_2cat_f", "ri_em_type_98_2cat_f", 
+               "ri_em_type_99_2cat_f", "ri_em_type_other", "ri_report_2cat_f", 
+               "ri_aps_no_reason", "ri_refer_svcs_2cat_f", 
+               "ri_refer_svcs_specify", "ri_reflection_2cat_f", 
+               "ri_reflection_notes")
+```
+
+```{r}
+plot_data <- dt_data %>% select(all_of(plot_vars)) %>%
+  tidyr::pivot_longer(-c(record_id, calc_institution_7cat_f), 
                       names_to = "var", values_to = "value") %>%
   # Add labels
   left_join(var_desc, by = c("var" = "variable"))
@@ -482,7 +517,7 @@ shared_plot_data <- dash_data %>%
 ```{r}
 # Function for creating data subsets
 data_subset <- function(vars, level_list){
-  df <- shared_plot_data %>% filter(var %in% vars) %>%
+  df <- plot_data %>% filter(var %in% vars) %>%
     mutate(
       # Convert NA into a character value
       value = case_when(is.na(value) ~ "NA",
@@ -497,101 +532,109 @@ data_subset <- function(vars, level_list){
 }
 ```
 
+```{r}
+univar_plot_data <- function(vars, level_list, labels_list){
+  plot_data %>% filter(var %in% vars) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value, 
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in dataframe is maintained in the plot
+      label = factor(label, levels = rev(unique(label)))
+    ) %>%
+    # Create proportions
+    reframe(
+    inst_count = n(), .by = c(calc_institution_7cat_f, label, value)
+    ) %>% 
+    # Include counts for factor levels that have zero counts
+    group_by(calc_institution_7cat_f, label) %>%
+    tidyr::complete(value) %>%
+    ungroup() %>%
+    mutate(
+      inst_count = tidyr::replace_na(inst_count, 0)
+      ) %>%
+    # Calulate totals and proportions for each institution
+    mutate(
+      inst_total = sum(inst_count), .by = c(calc_institution_7cat_f, label),
+      inst_perc = paste0(format(round((inst_count/inst_total) *100, 1),
+                                nsmall = 1), "%")
+      ) %>%
+    # Calulate totals and proportions for all
+    mutate(
+      count = sum(inst_count), .by = c(label, value)
+      ) %>%
+    mutate(
+      total = sum(count), .by = c(calc_institution_7cat_f, label),
+      perc = paste0(format(round((count/total) *100, 1), nsmall = 1), "%")
+      )
+}
+```
+
+
 ## Indicators of abuse
 
 ```{r}
-ind_em_plot_data <- data_subset(ind_em_vars, 
+ind_em_plot_data <- univar_plot_data(ind_em_vars, 
                                         level_list = c("Yes", "No", 
                                                        "Unable to assess"))
 ```
 
-## Suspect EM
-
 ```{r}
-suspect_em_plot_data <- data_subset("suspect_em_2cat_f", 
-                                        level_list = c("Yes", "No"))
-
+ind_em_plot_data_all <- ind_em_plot_data %>% select(-c(calc_institution_7cat_f, inst_count,
+                                            inst_perc, inst_total)) %>% 
+  distinct()
 ```
 
 ## EM Type
 
 ```{r}
-em_type_plot_data <- data_subset(em_type_vars, 
+em_type_plot_data <- univar_plot_data(em_type_vars, 
                                         level_list = c("Yes", "No"))
 
 ```
 
-## Intent to Report to APS
-
 ```{r}
-report_plot_data <- dash_data %>% 
-  select(record_id, ri_institution_7cat_f, ri_clinician_id, suspect_em_2cat_f,
-         ri_report_2cat_f) %>%
-  tidyr::pivot_longer(ri_report_2cat_f, 
-                      names_to = "var", values_to = "value") %>% 
-  # Add labels
-  left_join(var_desc, by = c("var" = "variable"))  %>%
-    mutate(
-      # Convert NA into a character value
-      # Distinguish between true NA and EM not suspected
-      value = case_when(is.na(value) & suspect_em_2cat_f == "Yes" ~ "NA",
-                        is.na(value) & 
-                          suspect_em_2cat_f != "Yes" ~ "EM not suspected",
-                        TRUE ~ value),
-      value = factor(value, 
-                     levels = c("Yes", "No", "EM not suspected", "NA"),
-                     exclude = NULL
-                     ),
-      # Ensure the order of labels in dataframe is maintained in the plot
-      label = factor(label, levels = rev(unique(label)))
-    )
- 
+em_type_plot_data_all <- em_type_plot_data %>% select(-c(calc_institution_7cat_f, inst_count,
+                                            inst_perc, inst_total)) %>% 
+  distinct()
 ```
 
 ### Counts for APS reports intended and made
 
 ```{r}
-institution_long_lat <- data.frame(
-  institution = c(
-    "Baylor College of Medicine - BT House Calls",  "Johns Hopkins - JHOME", 
-    "UCSF - Care at Home Program", "University of Alabama - UAB House Calls",
-    "UT Southwestern - COVE", "UTH Houston"
-  ),
-  longitude = c(29.71052761800321, 39.33008377311541, 37.7669884176172, 
-                33.502461653045216, 32.815820023948795, 29.703289163249107),
-  latitude = c(-95.39623789990478, -76.62051772290135, -122.45905392951434,
-               -86.80513736700209, -96.8448134037558, -95.40319950387807)
-)
-```
-
-
-```{r}
 # Intended reports
-reports_intended <- dash_data %>% select(ri_patient_mrn, ri_institution_7cat_f, 
-                                          ri_report_2cat_f) %>% 
+reports_intended <- dt_data %>% select(ri_patient_mrn, calc_institution_7cat_f, 
+                                          ri_report_2cat_f, timestamp_end) %>% 
   # Exclude fake patient
   filter(ri_patient_mrn != "Julia_Test_Patient1") %>%
   # Filter only rows where an intention to report was indicated
   filter(ri_report_2cat_f == "Yes") %>%
   # Standardize the MRN to remove trailing zeros at the beginning
   mutate(
-    std_mrn = gsub("^0+", "", ri_patient_mrn)
+    std_mrn = gsub("^0+", "", ri_patient_mrn),
+    # ri_date does not always match the timestamp variable so make a new date 
+    # variable based on the ending timestamp
+    end_date = as.Date(timestamp_end)
   ) %>% relocate(std_mrn, .after = ri_patient_mrn) 
 
 # Date range
-start_date <- min(as.Date(dash_data$ri_date))
-end_date <- max(as.Date(dash_data$ri_date))
+start_date <- min(as.Date(dt_data$ri_timestamp_start))
+end_date <- max(as.Date(dt_data$timestamp_end))
 
 # Reports made
-reports_made <- aps_reports_data %>% 
+intended_reports_made <- aps_reports_data %>% 
+  select(ar_mrn, ar_encounter_date) %>%
   filter(between(as.Date(ar_encounter_date), start_date, end_date)) %>% 
   # Standardize the MRN to remove trailing zeros at the beginning
   mutate(
     std_mrn = gsub("^0+", "", ar_mrn)
   ) %>% relocate(std_mrn, .after = ar_mrn) %>%
-  filter(std_mrn %in% reports_intended$std_mrn) %>% nrow()
-
-reports_intended <- reports_intended %>% nrow()
+  right_join(reports_intended, 
+             by = c("ar_encounter_date" = "end_date", "std_mrn"))
 ```
 
 
@@ -599,25 +642,25 @@ reports_intended <- reports_intended %>% nrow()
 
 ```{r}
 # Number of cases where EM was suspected
-suspect_em_no <- dash_data %>% filter(suspect_em_2cat_f == "Yes") %>% nrow()
+suspect_em_no <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% nrow()
 
 # Number of cases where EM was not suspected
-not_suspect_em_no <- dash_data %>% filter(suspect_em_2cat_f == "No") %>% nrow()
+not_suspect_em_no <- dt_data %>% filter(suspect_em_2cat_f == "No") %>% nrow()
 ```
 
 ## Indicators of EM Module and Suspect EM
 
 ```{r}
 ind_em_labs <- c(
-  "Unmet needs", "Unexplained injuries", "Prohibited", "Isolated", 
-  "Environment health or safety\nconcern", "Defensive", "Chemically sedated",
-  "Anxious", "Absence of necessities"
+  "Absence of necessities", "Environment health or safety\nconcern", "Defensive", 
+  "Chemically sedated", "Isolated", "Anxious", "Prohibited", "Unmet needs",
+  "Unexplained injuries" 
   )
 ```
 
 ```{r}
 # Character vector of filters
-ind_sus_em_plot_data <- dash_data %>% 
+ind_sus_em_plot_data <- dt_data %>% 
   select(record_id, all_of(ind_em_vars), suspect_em_2cat_f) %>%
   tidyr::pivot_longer(all_of(ind_em_vars), 
                       names_to = "em_ind_var", values_to = "em_ind_value") %>%
@@ -629,7 +672,7 @@ ind_sus_em_plot_data <- dash_data %>%
   mutate(
     # Include line breaks in labels
     ind_em_label = stringr::str_wrap(ind_em_label, width = 30),
-    ind_em_label = factor(ind_em_label),
+    ind_em_label = factor(ind_em_label, levels = rev(ind_em_labs)),
     # Convert NA into a character value
     em_ind_value = case_when(is.na(em_ind_value) ~ "NA",
                       TRUE ~ em_ind_value),
@@ -655,7 +698,7 @@ ind_sus_em_plot_data <- dash_data %>%
       suspect_em_2cat_f == "No" ~ (count/not_suspect_em_no) *100
       ),
     perc_label = paste0(format(round(perc, 1), nsmall = 1), "%")
-    )  
+    ) 
 ```
 
 ```{r}
@@ -682,7 +725,7 @@ em_type_labs <- c( "Self-neglect suspected", "Financial exploitation suspected",
 ```
 
 ```{r}
-sus_type_em_plot_data <- dash_data %>%
+sus_type_em_plot_data <- dt_data %>%
   select(record_id, suspect_em_2cat_f, all_of(em_type_vars)) %>%
   tidyr::pivot_longer(all_of(em_type_vars), 
                       names_to = "em_type_var", values_to = "em_type_value") %>%
@@ -735,8 +778,8 @@ path <- here::here("data", "detect_tool_pilot", "dashboard_prepped_data.RData")
 save(missing_plot_data, baylor_missing_plot_data, jh_missing_plot_data,
      ucsf_missing_plot_data, uab_missing_plot_data, utsw_missing_plot_data,
      lbj_missing_plot_data, utp_missing_plot_data, text_box_table_data, 
-     ind_em_plot_data, suspect_em_plot_data, em_type_plot_data, 
-     report_plot_data, reports_intended, reports_made, ind_sus_em_plot_data, 
+     ind_em_plot_data, ind_em_plot_data_all, em_type_plot_data, em_type_plot_data_all,
+     reports_intended, intended_reports_made, ind_sus_em_plot_data, 
      ind_sus_em_table_data, sus_type_em_plot_data, sus_type_em_table_data, 
      file = path)
 
