@@ -1,3 +1,5 @@
+# Creates guage chart
+
 gauge_chart <- function(x, n, color =  "#21BA97", title = NULL) {
   data.frame(x = c(5 * cos(seq(-pi, 0, len = 100)), 
                    3 * cos(seq(0, -pi, len = 100)),

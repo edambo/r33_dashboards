@@ -1,0 +1,776 @@
+
+---
+title: "Clean APS reports data imported from REDCap"
+---
+
+# Overview
+
+In this file, we do some initial cleaning of the APS reports data imported from REDCap to prepare it for dashboard summary. 
+
+
+# Load packages
+
+```{r, message= FALSE}
+library(dplyr, warn.conflicts = FALSE)
+library(readr)
+library(purrr)
+library(stringr)
+library(janitor)
+library(here)
+```
+
+
+# Load custom functions
+
+```{r}
+source(here::here("R", "recoding_factoring_relocating.R"))
+source(here::here("R", "nums_to_na.R"))
+source(here::here("R", "data_cleaning_tools.R"))
+```
+
+
+# Load data
+
+```{r, message=FALSE}
+# Raw data with numerically coded values
+aps <- read_csv(here::here("data", "aps_reports", "aps_report_data_raw.csv")) %>% 
+  clean_names()
+
+# Data labels
+aps_lab <- read_csv(here::here("data", "aps_reports", 
+                               "aps_report_data_labels_raw.csv"))
+```
+
+
+# Create a dataframe with variable descriptions
+
+Extract the column names from the data and labels data frames to create a data frame of variable descriptions
+
+```{r}
+var_desc <- data.frame(variable = names(aps),
+                       description = names(aps_lab)) %>%
+  mutate(id = row_number())
+
+var_desc
+```
+
+
+# Replace labels with variable names in the label data frame
+
+```{r}
+# Create a named vector with variable names and variable descriptions 
+naming_vec <- setNames(as.list(var_desc$description),
+                               var_desc$variable)
+
+# Rename the variables using the vector
+aps_rep <- aps_lab %>% rename(unlist(naming_vec))
+```
+
+# Convert the checkbox variables into binary forms
+
+```{r}
+checkbox_vars <- aps_rep %>% select(where(is.character)) %>%
+  select(which(sapply(., function(x) any(x == "Unchecked")))) %>% names()
+
+checkbox_vars
+```
+
+
+```{r}
+# Convert to binary
+aps_rep <- aps_rep %>%
+  mutate(
+    across(
+      .cols = all_of(checkbox_vars),
+      .fns = ~ case_when(
+        .x == "Unchecked" ~ 0,
+        .x == "Checked" ~ 1
+      )
+    )
+  )
+```
+
+
+## Numeric and factor variables
+
+### Person submitting
+
+```{r}
+cols <- c("ar_user")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Kristina Little, MD" = 11, "Thomas Cudjoe, MD, MPH" = 21, 
+    "Maria Yefimova, PhD, MS" = 31, "Marianthe Grammas, MD" = 41, 
+    "Debbie Freeland, MD" = 51, "Julia Hiner, MD" = 61, "Faith Atai, MD" = 71,
+    "Not listed" = 98
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "8cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Institution
+
+```{r}
+cols <- c("ar_institution")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Baylor College of Medicine - BT House Calls" = 1, 
+    "Johns Hopkins - JHOME" = 2, 
+    "UCSF - Care at Home Program" = 3,
+    "University of Alabama - UAB House Calls" = 4, 
+    "UT Southwestern - COVE" = 5, 
+    "UTH Houston - LBJ House Calls" = 6,
+    "UTH Houston - UT Physicians House Calls" = 7
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "7cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+```{r}
+names(aps)
+```
+
+### Clinicians
+
+Combine clinician names across all institutions into a single column
+
+```{r}
+clinician_vars <- c("ar_clinician_bcm", "ar_clinician_bcm_oth", 
+                     "ar_clinician_jh", "ar_clinician_jh_oth", 
+                     "ar_clinician_ucsf", "ar_clinician_ucsf_oth",
+                     "ar_clinician_uab", "ar_clinician_uab_oth", 
+                     "ar_clinician_utsw", "ar_clinician_utsw_oth", 
+                     "ar_clinician_lbj", "ar_clinician_lbj_oth", 
+                     "ar_clinician_utp", "ar_clinician_utp_oth")
+
+aps_rep <- aps_rep %>% 
+  mutate(
+    ar_clinician = coalesce(ar_clinician_utp_oth, ar_clinician_utp, 
+                            ar_clinician_lbj_oth, ar_clinician_lbj, 
+                            ar_clinician_utsw_oth, ar_clinician_utsw, 
+                            ar_clinician_uab_oth, ar_clinician_uab, 
+                            ar_clinician_ucsf_oth, ar_clinician_ucsf, 
+                            ar_clinician_jh_oth, ar_clinician_jh, 
+                            ar_clinician_bcm_oth, ar_clinician_bcm)
+    ) %>% select(-c(all_of(clinician_vars))) %>%
+  relocate(ar_clinician, .after = ar_institution_7cat_f)
+```
+
+### APS report number
+
+Remove non-alphanumeric characters like pounds or dashes and non-applicable entries like "NA", "N/A" e.t.c.
+
+```{r}
+aps_rep <-  aps_rep %>%
+  mutate(
+    # Remove non-alphanumeric characters
+    ar_aps_report_num = gsub("[^a-zA-Z0-9]", "", ar_aps_report_num),
+    # Remove "NA" or "N/A"
+    ar_aps_report_num = ifelse(ar_aps_report_num == "NA" | 
+                                   ar_aps_report_num == "n/a", NA, 
+                                 ar_aps_report_num)
+  )
+```
+
+### APS report method
+
+```{r}
+cols <- c("ar_aps_report_meth")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Online" = 1, 
+    "Phone" = 2, 
+    "Other {ar_aps_report_meth_oth}" = 98
+)
+
+new_value_labels <- c(
+    "Online" = 1, 
+    "Phone" = 2, 
+    "Other" = 98
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "3cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- new_value_labels[!new_value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Sex
+
+```{r}
+cols <- c("ar_sex")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Male" = 1, 
+    "Female" = 2, 
+    "Not listed {ar_sex_oth}" = 98,
+    "Unknown" = 77
+)
+
+new_value_labels <- c(
+    "Male" = 1, 
+    "Female" = 2, 
+    "Not listed" = 98,
+    "Unknown" = 77
+)
+
+# NA values
+na_values <- c(77)
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "3cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- new_value_labels[!new_value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Race
+
+```{r}
+race_cols <- c("ar_race_1", "ar_race_2", "ar_race_3", "ar_race_4", "ar_race_5", 
+               "ar_race_98")
+```
+
+
+Create a new race-ethnicity variable with the following categories: "Hispanic, any race", "Black, non-Hispanic", "White, non-Hispanic", "Other race or multiple races, non-Hispanic"
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+  "Hispanic, any race" = 1, "Black, non-Hispanic" = 2, "White, non-Hispanic" = 3, 
+  "Other race or multiple races, non-Hispanic" = 4
+)
+
+aps_rep <- aps_rep %>%
+  mutate(
+    race_sum = rowSums(across(.cols = all_of(race_cols))), # Temp column for sum
+    ar_race_6cat = case_when(
+      ar_race_1 == 1 & race_sum == 1 ~ 1, # American Indian or Alaskan Native
+      ar_race_2 == 1 & race_sum == 1 ~ 2, # Asian
+      ar_race_3 == 1 & race_sum == 1 ~ 3, # Black or African American
+      ar_race_4 == 1 & race_sum == 1 ~ 4, # Native Hawaiian or Other Pacific Islander
+      ar_race_5 == 1 & race_sum == 1 ~ 5, # White
+      race_sum > 1 ~ 6, # Multiple races
+      ar_race_98 == 1 & (grepl("^ *[\"\']*hispanic[\"\']* *$", ar_race_oth, 
+              ignore.case = TRUE) == FALSE) ~ 6, # Other race (not hispanic),
+      TRUE ~ NA
+    ),
+    ar_race_eth_4cat = case_when(
+      is.na(ar_hispanic) ~ NA_integer_,
+      ar_hispanic == "Yes" ~ 1, # "Hispanic, any race"
+      ar_race_6cat == 3 & ar_hispanic == "No" ~ 2, # "Black, non-Hispanic"
+      ar_race_6cat == 5 & ar_hispanic == "No" ~ 3, # "White, non-Hispanic"
+      TRUE ~ 4, # "Other race or multiple races, non-Hispanic"
+    ),
+    ar_race_eth_4cat_f = factor(
+      ar_race_eth_4cat,
+      levels = as.numeric(value_labels),
+      labels = names(value_labels)
+    )
+  ) %>% select(-c(race_sum))
+
+# Relocate new ar_race_6cat, ar_race_eth variables after ar_race_race_oth  
+cols <- c("ar_race_eth_4cat_f", "ar_race_eth_4cat", "ar_race_6cat") 
+for (col in cols) {
+  aps_rep <- aps_rep %>%
+    dplyr::relocate(all_of(col), .after = ar_race_oth )
+}
+```
+
+### Hispanic
+
+```{r}
+cols <- c("ar_hispanic")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Yes" = 1, 
+    "No" = 0, 
+    "Unknown" = 77
+)
+
+# NA values
+na_values <- c(77)
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "2cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Relationship status
+
+```{r}
+cols <- c("ar_relationship")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "Married" = 1, 
+    "Living together and unmarried/Common law relationship" = 2, 
+    "Separated" = 3,
+    "Divorced" = 4,
+    "Widowed" = 5,
+    "Single/Never married" = 6,
+    "Not listed {ar_relationship_oth}" = 98,
+    "Unknown" = 77
+)
+
+# Numeric coding for character values in each column of interest
+new_value_labels <- c(
+    "Married" = 1, 
+    "Living together and unmarried/Common law relationship" = 2, 
+    "Separated" = 3,
+    "Divorced" = 4,
+    "Widowed" = 5,
+    "Single/Never married" = 6,
+    "Not listed" = 98,
+    "Unknown" = 77
+)
+
+# NA values
+na_values <- c(77)
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "7cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- new_value_labels[!new_value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Household size
+
+```{r}
+cols <- c("ar_household_size")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "1" = 1, 
+    "2" = 2, 
+    "3" = 3,
+    "4" = 4,
+    "5" = 5,
+    "6" = 6,
+    "7" = 7,
+    "8" = 8,
+    "9+" = 9,
+    "Unknown" = 77
+)
+
+# NA values
+na_values <- c(77)
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "9cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Reason for Visit
+
+```{r}
+cols <- c("ar_visit_reason")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels <- c(
+    "New patient to establish care" = 1, 
+    "New patient for home safety evaluation" = 2, 
+    "New patient for transition of care" = 3,
+    "Return patient for acute concern only" = 4,
+    "Return patient for chronic concern only" = 5,
+    "Return patient for acute and chronic concerns" = 6,
+    "Not listed" = 98
+)
+
+# NA values
+na_values <- c()
+
+# Suffix for the version of each column with "Don't Know" and "Refused" changed
+# to NA.
+suffix <- "7cat"
+
+# Labels and levels for factors (Shouldn't need to change this code)
+factor_labs_levs <- value_labels[!value_labels %in% na_values]
+
+# Column names for the version of each column with "Don't Know" and "Refused" 
+# changed to NA (Shouldn't need to change this code).
+cols_suffix <- paste(cols, suffix, sep = "_")
+
+# Prepare columns for analysis
+# - Convert character values to numeric values
+# - Create a version of each column with "Don't know" and "Refused" converted to NA
+# - Create a factor version of each column (w/o "Don't know" and "Refused")
+# - Arrange the columns as: original column, numeric column w/o "Don't know" and 
+#   "Refused", and the factor version of the column.
+aps_rep <- aps_rep |>
+  # Convert character values to numeric values
+  chars_to_nums(cols, value_labels) |> 
+  # Create a version of each column with "Don't know" and "Refused" converted to NA
+  nums_to_nas(cols, na_values, suffix) |> 
+  # Relocate new columns with NA values immediately after the original column
+  relocate_na_cols(cols, suffix) |> 
+  # Create a factor version of each column (w/o "Don't know" and "Refused")
+  factors(cols_suffix, factor_labs_levs) |> 
+  # Relocate factor columns immediately after the new columns with NA values
+  relocate_factors(cols_suffix) |>
+  # Drop the original variable if the version with "cat" suffix has the exact
+  # same values.
+  drop_dup_orig(cols, cols_suffix)
+```
+
+### Cognitive impairment
+
+```{r}
+cols <- c("ar_dx_mci_dementia_0", "ar_dx_mci_dementia_1", "ar_dx_mci_dementia_2",  
+          "ar_dx_mci_dementia_77")
+get_values(aps_rep, cols)
+```
+
+```{r}
+# Numeric coding for character values in each column of interest
+value_labels_4cat <- c(
+    "No diagnosis of mild cognitive impairment or dementia" = 0, 
+    "Diagnosis of mild cognitive impairment" = 1, 
+    "Diagnosis of dementia" = 2,
+    "Diagnosis of both mild cognitive impairment and dementia" = 3
+)
+
+value_labels_2cat <- c(
+    "No diagnosis of mild cognitive impairment or dementia" = 0, 
+    "Diagnosis of mild cognitive impairment or dementia" = 1
+)
+
+aps_rep <- aps_rep %>% 
+  mutate(
+    dx_sum = rowSums(across(.cols = all_of(cols))), # Temp column for sum
+    ar_dx_imp_4cat = case_when(
+      ar_dx_mci_dementia_0 == 1 & dx_sum == 1 ~ 0,
+      ar_dx_mci_dementia_1 == 1 & dx_sum == 1 ~ 1,
+      ar_dx_mci_dementia_2 == 1 & dx_sum == 1 ~ 2,
+      ar_dx_mci_dementia_1 == 1 & ar_dx_mci_dementia_2 == 1 ~ 3,
+      ar_dx_mci_dementia_77 == 1 & dx_sum == 1 ~ NA_integer_
+    ),
+    ar_dx_imp_4cat_f = factor(
+      ar_dx_imp_4cat,
+      levels = as.numeric(value_labels_4cat),
+      labels = names(value_labels_4cat)
+    ),
+    ar_dx_imp_2cat = case_when(
+      ar_dx_imp_4cat == 0 ~ 0,
+      ar_dx_imp_4cat == 1 | ar_dx_imp_4cat == 2 | ar_dx_imp_4cat == 3 ~ 1,
+      TRUE ~ NA_integer_
+    ),
+    ar_dx_imp_2cat_f = factor(
+      ar_dx_imp_2cat,
+      levels = as.numeric(value_labels_2cat),
+      labels = names(value_labels_2cat)
+    )
+  ) %>% select(-c(dx_sum))
+
+# Relocate new variables after ar_dx_mci_dementia_77
+cols <- c("ar_dx_imp_2cat_f", "ar_dx_imp_2cat", "ar_dx_imp_4cat_f", 
+          "ar_dx_imp_4cat") 
+
+for (col in cols) {
+  aps_rep <- aps_rep %>%
+    dplyr::relocate(all_of(col), .after = ar_dx_mci_dementia_77)
+}
+```
+
+# Update variable descriptions dataframe with new variables
+
+```{r}
+# Get df of variables without descriptions
+no_desc <- names(aps_rep) %>% 
+  # Subset new variables
+  setdiff(., var_desc$variable) %>%
+  list() %>%
+  # Convert list of new variables into dataframe
+  as.data.frame(col.names = "variable")
+```
+
+```{r}
+# Add descriptions to variables with names that were created by adding suffixes 
+# to names of original variables
+vars_suffix <- no_desc %>%
+  # Join descriptions from var_desc dataframe to new data frame 
+  mutate(
+    no_suffix = gsub("_[0-9]+cat[_f]*", "", x = variable)
+  ) %>% inner_join(var_desc, by = c("no_suffix" = "variable")) %>%
+  # remove "no_suffix" variable
+  select(-c(no_suffix))
+```
+
+```{r}
+# Add descriptions for remaining variables
+no_match_vars <- no_desc %>%
+  filter(!(variable %in% vars_suffix$variable))
+
+no_match_vars
+```
+
+```{r}
+no_match_vars <- no_match_vars %>% tibble::add_column(
+  description = 
+    c("Clinician name", "Race", 
+      rep("Race (Black, White, Other) and Ethnicity", 2),
+
+      rep("Diagnosis of mild cognitive impairment or dementia", 4)
+      ),
+  id = c(25.1, 41.1, 41.2, 41.3, 54.1, 54.2, 54.4, 54.5)
+  )
+```
+
+```{r}
+# Combine all the variables with their descriptions
+var_desc <- bind_rows(var_desc, vars_suffix, no_match_vars) %>% arrange(id) %>%
+  select(-c(id))
+
+# Check which variables are in the descriptions but not the data frame
+setdiff(var_desc$variable, names(aps_rep))
+```
+
+```{r}
+# Remove variables in the descriptions but not the data frame
+var_desc <- var_desc %>% filter(variable %in% names(aps_rep))
+```
+
+# Save data
+
+```{r}
+write_rds(aps_rep, here::here("data", "aps_reports",
+                                 "aps_reports_cleaned.RDS"))
+
+write_rds(var_desc, here::here("data_management", "aps_reports", 
+                               "variable_descriptions.RDS"))
+```
+

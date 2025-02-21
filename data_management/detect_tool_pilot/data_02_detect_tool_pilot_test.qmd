@@ -1,0 +1,840 @@
+---
+title: "Create variables for visualizing the DETECT tool pilot study data"
+---
+
+# Overview
+
+In this file, we create some new variables that summarize the completion and missingness counts for various variables in the DETECT tool pilot study data. These new variables will used in creating interactive plots using the plotly package. 
+
+
+# Load packages
+
+```{r, message= FALSE}
+library(dplyr, warn.conflicts = FALSE)
+library(readr)
+library(here)
+library(crosstalk)
+```
+
+
+# Load data and custom functions
+
+```{r, message=FALSE}
+dt_data_path <- here::here("data", "detect_tool_pilot",
+                                 "detect_tool_pilot_cleaned.RDS")
+dt_data <- readRDS(dt_data_path)
+var_desc <- readRDS(here::here("data_management", "detect_tool_pilot", 
+                               "variable_descriptions.RDS"))
+aps_reports_data <- readRDS(here::here("data", "aps_reports",
+                                    "aps_reports_cleaned.RDS"))
+```
+
+
+```{r}
+source(here::here("r", "add_shade_column_x_rows.R"))
+```
+
+# Set institution 
+For the actual data, calc_institution_7cat_f will be the appropriate variable for institution, but this variable was created after the pilot data had been collected and is empty in this dataset. It will be equal to the value of ri_institution_7cat_f only for the pilot data. This code will not be necessary for the actual data.
+
+```{r}
+dt_data <- dt_data %>%
+  mutate(
+    calc_institution_7cat_f = 
+      case_when(
+        basename(dt_data_path) == "detect_tool_pilot_cleaned.RDS" ~ 
+          ri_institution_7cat_f, 
+        TRUE ~ calc_institution_7cat_f
+        )
+  )
+```
+
+
+# Select variables useful for the dashboard
+
+```{r}
+dash_vars <- c("record_id", "reporting_instrument_complete", "ri_timestamp_start",
+               "timestamp_end", "ri_patient_mrn", "calc_institution_7cat_f", 
+               "ri_clinician_id", "ri_clinician_id_name", "ri_necessities_3cat_f", 
+               "ri_environment_3cat_f", "ri_environment_un_reason", 
+               "ri_caregiver_3cat_f", "ri_caregiver_un_reason_2cat_f", 
+               "ri_caregiver_oth", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
+               "ri_anxious_3cat_f", "ri_prohibited_3cat_f", 
+               "ri_unmet_needs_3cat_f", "ri_injuries_3cat_f", 
+               "ri_patient_assess", "suspect_em_2cat_f", "ri_em_no_reason", 
+               "ri_em_reason", "ri_em_type_1_2cat_f", "ri_em_type_2_2cat_f", 
+               "ri_em_type_3_2cat_f", "ri_em_type_4_2cat_f", "ri_em_type_5_2cat_f", 
+               "ri_em_type_6_2cat_f", "ri_em_type_7_2cat_f", "ri_em_type_98_2cat_f", 
+               "ri_em_type_99_2cat_f", "ri_em_type_other", "ri_report_2cat_f", 
+               "ri_aps_no_reason", "ri_refer_svcs_2cat_f", 
+               "ri_refer_svcs_specify", "ri_reflection_2cat_f", 
+               "ri_reflection_notes")
+```
+
+```{r}
+ind_em_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f", 
+                 "ri_caregiver_3cat_f", "ri_sedated_3cat_f", 
+                 "ri_isolated_3cat_f", "ri_anxious_3cat_f", 
+                 "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+                 "ri_injuries_3cat_f")
+```
+
+# Missingness data
+
+```{r}
+missing_data <- dt_data %>% select(all_of(dash_vars))
+```
+
+## Create fuction to generate missingness variables
+
+This function will also take branching/ skip logic into consideration.
+
+```{r}
+dt_miss <- function(df, var, condition = NULL){
+  if(is.null(condition)){
+    new_df <- df %>% 
+      mutate(
+        "{var}_miss" := case_when(
+          is.na(.data[[var]]) ~ 1,
+          TRUE ~ 0
+        )
+      )
+  }else if(!is.null(condition)){
+    new_df <- df %>%
+      mutate(
+         "{var}_miss" := case_when(
+           eval(parse(text = condition)) & is.na(.data[[var]]) ~ 1,
+           !(eval(parse(text = condition))) & is.na(.data[[var]]) ~ NA,
+           eval(parse(text = condition)) & !is.na(.data[[var]]) ~ 0
+        )       
+      )
+  }
+  
+  new_df %>% relocate(paste0(var, "_miss"), .after = var)
+}
+```
+
+## Variables with no conditional arguments/ skip logic
+
+```{r}
+vars <- c("ri_patient_mrn", "calc_institution_7cat_f", "ri_clinician_id_name", 
+          "ri_necessities_3cat_f", "ri_environment_3cat_f", 
+          "ri_caregiver_3cat_f", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
+          "ri_anxious_3cat_f", "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+          "ri_injuries_3cat_f", "suspect_em_2cat_f", "ri_reflection_2cat_f"
+          )
+condition <- NULL
+```
+
+```{r}
+for(var in vars){
+  missing_data <- dt_miss(df = missing_data, var = var, 
+                     condition = condition)  
+}
+```
+
+## Variables with conditional arguments/ skip logic
+
+### ri_environment_un_reason
+
+```{r}
+var <- "ri_environment_un_reason"
+
+condition_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f")
+
+condition <- "if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to assess')"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_caregiver_un_reason
+
+```{r}
+var <- "ri_caregiver_un_reason_2cat_f"
+condition <- "ri_caregiver_3cat_f == 'Unable to assess'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition) 
+```
+
+### ri_caregiver_oth
+
+```{r}
+var <- "ri_caregiver_oth"
+condition <- "ri_caregiver_un_reason_2cat_f == 'Other reason'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_patient_assess
+
+```{r}
+var <- "ri_patient_assess"
+
+condition_vars <- c("ri_sedated_3cat_f", "ri_isolated_3cat_f",
+                    "ri_anxious_3cat_f", "ri_prohibited_3cat_f", 
+                    "ri_unmet_needs_3cat_f", "ri_injuries_3cat_f")
+
+condition <- "if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to assess')"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_em_no_reason
+
+```{r}
+var <- "ri_em_no_reason"
+
+condition_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f",
+                    "ri_caregiver_3cat_f", "ri_sedated_3cat_f", 
+                    "ri_isolated_3cat_f", "ri_anxious_3cat_f", 
+                    "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+                    "ri_injuries_3cat_f")
+
+condition <- "suspect_em_2cat_f == 'No' & if_any(.cols = all_of(condition_vars), 
+.fns = ~.x == 'Yes')"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_em_reason
+
+```{r}
+var <- "ri_em_reason"
+
+condition_vars <- c("ri_necessities_3cat_f", "ri_environment_3cat_f",
+                    "ri_caregiver_3cat_f", "ri_sedated_3cat_f", 
+                    "ri_isolated_3cat_f", "ri_anxious_3cat_f", 
+                    "ri_prohibited_3cat_f", "ri_unmet_needs_3cat_f", 
+                    "ri_injuries_3cat_f")
+
+condition <- "suspect_em_2cat_f == 'Yes' & if_all(.cols = all_of(condition_vars), 
+.fns = ~.x != 'Yes')"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### EM Type vars
+
+```{r}
+em_type_vars <- c("ri_em_type_1_2cat_f", "ri_em_type_2_2cat_f", "ri_em_type_3_2cat_f", 
+          "ri_em_type_4_2cat_f", "ri_em_type_5_2cat_f", "ri_em_type_6_2cat_f", 
+          "ri_em_type_7_2cat_f", "ri_em_type_98_2cat_f", "ri_em_type_99_2cat_f")
+```
+
+```{r}
+missing_data <- missing_data %>%
+  mutate(
+    ri_em_type_miss = case_when(
+      suspect_em_2cat_f == 'Yes' & 
+        if_all(.cols = all_of(em_type_vars), 
+               .fns = ~.x == "No") ~ 1,
+      suspect_em_2cat_f != 'Yes' & 
+        if_all(.cols = all_of(em_type_vars), 
+               .fns = ~.x == "No") ~ NA,
+      suspect_em_2cat_f == 'Yes' & 
+        if_any(.cols = all_of(em_type_vars), 
+               .fns = ~.x == "Yes") ~ 0      
+      )
+  )
+```
+
+### ri_em_type_other
+
+```{r}
+var <- "ri_em_type_other"
+condition <- "ri_em_type_98_2cat_f == 'Checked'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_report_2cat_f
+
+```{r}
+var <- "ri_report_2cat_f"
+condition <- "suspect_em_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_aps_no_reason
+
+```{r}
+var <- "ri_aps_no_reason"
+condition <- "ri_report_2cat_f == 'No'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_refer_svcs_2cat_f
+
+```{r}
+var <- "ri_refer_svcs_2cat_f"
+condition <- "suspect_em_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+### ri_refer_svcs_specify
+
+```{r}
+var <- "ri_refer_svcs_specify"
+condition <- "ri_refer_svcs_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition) 
+```
+
+### ri_reflection_notes
+
+```{r}
+var <- "ri_reflection_notes"
+condition <- "ri_reflection_2cat_f == 'Yes'"
+```
+
+```{r}
+missing_data <- dt_miss(df = missing_data, var = var, 
+                   condition = condition)
+```
+
+
+# Prepare Missingness data for visualization
+
+```{r}
+label_order <- c(
+  "Brief note", "Have helpful details", "Specify other service", 
+  "Other service referral", "No intention to report to APS reason", 
+  "Intend to report to APS", "Specific other mistreatment type suspected", 
+  "EM type", "Suspect EM reason", 
+  "Indicators observed but EM not suspected reason", 
+  "Suspect EM", "Patient not assessed reason", 
+  "Unexplained injuries", "Unmet needs", "Prohibited", "Anxious", "Isolated", 
+  "Chemically sedated", "Other reason caregiver not assessed", 
+  "Caregiver not assessed reason", "Defensive", 
+  "Environment not assessed reason", "Environment health or safety concern", 
+  "Absence of necessities ", "Clinician name", "Institution", "Patient MRN"
+)
+
+# Function for creating missing plot data for all and each institution
+
+create_missing_plot_data <- function(data){
+  data %>% 
+    # Select only the record id and the missing data variables
+    select(record_id, ends_with("_miss")) %>%
+    # Remove "_miss" suffix
+    rename_with(~gsub("_miss", "", .x)) %>%
+    tidyr::pivot_longer(!record_id, names_to = "var", values_to = "missingness") %>%
+    # Recode missingness
+    mutate(
+      missingness_3cat_f = case_when(
+        missingness == 1 ~ "Missing",
+        missingness == 0 ~ "Not missing",
+        is.na(missingness) ~ "Not applicable"
+      ),
+      missingness_3cat_f = factor(missingness_3cat_f, 
+                       levels = c("Missing", "Not missing", "Not applicable"),
+                       exclude = NULL
+                       )
+    ) %>%
+    # Create count column
+    group_by(var, missingness_3cat_f) %>%
+    mutate(
+      count = n()
+    ) %>% ungroup() %>% 
+    select(-c(record_id)) %>%
+    distinct() %>% 
+    # Add labels
+    left_join(var_desc, by = c("var" = "variable")) %>%
+    # Create label for aggregate variable "ri_em_type"
+    mutate(
+      label = case_when(
+        var == "ri_em_type" ~ "EM type",
+        TRUE ~ label
+      )
+    ) %>% 
+    mutate(
+      # Ensure the correct order of labels is maintained in the plot
+      label = factor(label, levels = label_order)
+    )  
+}
+  
+
+```
+
+## All
+
+```{r}
+missing_plot_data <- create_missing_plot_data(missing_data)
+```
+
+## Baylor
+
+```{r}
+baylor_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  create_missing_plot_data()
+```
+
+## Johns Hopkins
+
+```{r}
+jh_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  create_missing_plot_data()
+```
+
+## UCSF
+
+```{r}
+ucsf_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  create_missing_plot_data()
+```
+
+## UAB
+
+```{r}
+uab_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  create_missing_plot_data()
+```
+
+## UTSW
+
+```{r}
+utsw_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  create_missing_plot_data()
+```
+
+## LBJ
+
+```{r}
+lbj_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  create_missing_plot_data()
+```
+
+## UTP
+
+```{r}
+utp_missing_plot_data <-  missing_data %>% 
+  filter(calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  create_missing_plot_data()
+```
+
+
+# Text box table data
+
+```{r}
+text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
+                    "ri_patient_assess", "ri_em_no_reason", "ri_em_reason", 
+                    "ri_em_type_other", "ri_aps_no_reason", 
+                    "ri_refer_svcs_specify", "ri_reflection_notes")
+```
+
+```{r}
+text_box_table_data <- missing_data %>% 
+  select(record_id, timestamp_end, calc_institution_7cat_f, 
+         all_of(text_box_items)) %>%
+  tidyr::pivot_longer(cols = all_of(text_box_items), 
+                      names_to = "var", values_to = "content") %>%
+  filter(!is.na(content)) %>% 
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable")) %>% 
+  select(-c(description, var)) %>%
+  relocate(label, .after = calc_institution_7cat_f) %>% distinct() %>%
+  mutate(
+    # Convert date-time variable to date variable
+    date = as.Date(timestamp_end),
+    # Make the record id and label columns factors to aid filtering
+    across(
+      .cols = c(record_id, label),
+      .fns = ~factor(.x)
+    )
+  ) %>% select(-c(timestamp_end)) %>%
+  relocate(date, .after = record_id)
+```
+
+
+# Univariate visuals data
+
+```{r}
+plot_vars <- c("record_id", "calc_institution_7cat_f", "ri_necessities_3cat_f", 
+               "ri_environment_3cat_f", "ri_environment_un_reason", 
+               "ri_caregiver_3cat_f", "ri_caregiver_un_reason_2cat_f", 
+               "ri_caregiver_oth", "ri_sedated_3cat_f", "ri_isolated_3cat_f", 
+               "ri_anxious_3cat_f", "ri_prohibited_3cat_f", 
+               "ri_unmet_needs_3cat_f", "ri_injuries_3cat_f", 
+               "ri_patient_assess", "suspect_em_2cat_f", "ri_em_no_reason", 
+               "ri_em_reason", "ri_em_type_1_2cat_f", "ri_em_type_2_2cat_f", 
+               "ri_em_type_3_2cat_f", "ri_em_type_4_2cat_f", "ri_em_type_5_2cat_f", 
+               "ri_em_type_6_2cat_f", "ri_em_type_7_2cat_f", "ri_em_type_98_2cat_f", 
+               "ri_em_type_99_2cat_f", "ri_em_type_other", "ri_report_2cat_f", 
+               "ri_aps_no_reason", "ri_refer_svcs_2cat_f", 
+               "ri_refer_svcs_specify", "ri_reflection_2cat_f", 
+               "ri_reflection_notes")
+```
+
+```{r}
+plot_data <- dt_data %>% select(all_of(plot_vars)) %>%
+  tidyr::pivot_longer(-c(record_id, calc_institution_7cat_f, suspect_em_2cat_f), 
+                      names_to = "var", values_to = "value") %>%
+  # Add labels
+  left_join(var_desc, by = c("var" = "variable"))
+```
+
+```{r}
+univar_plot_data <- function(vars, level_list, labels_list){
+  plot_data %>% filter(var %in% vars) %>% select(-c(suspect_em_2cat_f)) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value, 
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in dataframe is maintained in the plot
+      label = factor(label, levels = rev(unique(labels_list)))
+    ) %>%
+    # Create proportions
+    reframe(
+    inst_count = n(), .by = c(calc_institution_7cat_f, label, value)
+    ) %>% 
+    # Include counts for factor levels that have zero counts
+    group_by(calc_institution_7cat_f, label) %>%
+    tidyr::complete(value) %>%
+    ungroup() %>%
+    mutate(
+      inst_count = tidyr::replace_na(inst_count, 0)
+      ) %>%
+    # Calulate totals and proportions for each institution
+    mutate(
+      inst_total = sum(inst_count), .by = c(calc_institution_7cat_f, label),
+      inst_perc = paste0(format(round((inst_count/inst_total) *100, 1),
+                                nsmall = 1), "%")
+      ) %>%
+    # Calculate totals and proportions for all
+    mutate(
+      count = sum(inst_count), .by = c(label, value)
+      ) %>%
+    mutate(
+      total = sum(count), .by = c(calc_institution_7cat_f, label),
+      perc = paste0(format(round((count/total) *100, 1), nsmall = 1), "%")
+      )
+}
+```
+
+```{r}
+univar_plot_data <- function(vars, level_list, labels_list){
+  plot_data %>% filter(var %in% vars) %>% select(-c(suspect_em_2cat_f)) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value,
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in data frame is maintained in the plot
+      label = factor(label, levels = rev(unique(labels_list)))
+    ) %>%
+    # Create proportions
+    reframe(
+    inst_count = n(), .by = c(calc_institution_7cat_f, label, value)
+    ) %>%
+    # Include counts for factor levels that have zero counts
+    group_by(calc_institution_7cat_f, label) %>%
+    tidyr::complete(value) %>%
+    ungroup() %>%
+    mutate(
+      inst_count = tidyr::replace_na(inst_count, 0)
+      ) %>%
+    # Calulate totals and proportions for each institution
+    mutate(
+      inst_total = sum(inst_count), .by = c(calc_institution_7cat_f, label),
+      inst_perc = paste0(format(round((inst_count/inst_total) *100, 1),
+                                nsmall = 1), "%")
+      ) %>%
+    # Calculate totals and proportions for all
+    mutate(
+      count = sum(inst_count), .by = c(label, value)
+      ) %>%
+    mutate(
+      total = sum(count), .by = c(calc_institution_7cat_f, label),
+      perc = paste0(format(round((count/total) *100, 1), nsmall = 1), "%")
+      )
+}
+```
+
+## Indicators of abuse
+
+```{r}
+ind_em_labs <- c(
+  "Absence of necessities", "Environment health or safety concern", "Defensive", 
+  "Chemically sedated", "Isolated", "Anxious", "Prohibited", "Unmet needs",
+  "Unexplained injuries" 
+  )
+```
+
+```{r}
+ind_em_plot_data <- univar_plot_data(ind_em_vars, 
+                                        level_list = c("Yes", "No", 
+                                                       "Unable to assess"),
+                                     labels_list = ind_em_labs)
+```
+
+```{r}
+# Overall data not grouped by institution
+ind_em_plot_data_all <- ind_em_plot_data %>% select(-c(calc_institution_7cat_f, inst_count,
+                                            inst_perc, inst_total)) %>% 
+  distinct()
+```
+
+## EM Type
+
+```{r}
+em_type_labs <- c(
+  "Self-neglect suspected", "Financial exploitation suspected", 
+  "Emotional or psychological abuse suspected", "Physical abuse suspected", 
+  "Sexual abuse suspected", "Caregiver neglect suspected", 
+  "Abandonment suspected", "Other mistreatment type suspected",
+  "Dont know/ Not sure of mistreatment type"
+  )
+```
+
+```{r}
+em_type_plot_data <- univar_plot_data(em_type_vars, 
+                                        level_list = c("Yes", "No"),
+                                      labels_list = em_type_labs)
+
+```
+
+```{r}
+# Overall data not grouped by institution
+em_type_plot_data_all <- em_type_plot_data %>% select(-c(calc_institution_7cat_f, inst_count,
+                                            inst_perc, inst_total)) %>% 
+  distinct()
+```
+
+### Counts for APS reports intended and made
+
+```{r}
+# Intended reports
+reports_intended <- dt_data %>% select(ri_patient_mrn, calc_institution_7cat_f, 
+                                          ri_report_2cat_f, timestamp_end) %>% 
+  # Exclude fake patient
+  filter(ri_patient_mrn != "Julia_Test_Patient1") %>%
+  # Filter only rows where an intention to report was indicated
+  filter(ri_report_2cat_f == "Yes") %>%
+  # Standardize the MRN to remove trailing zeros at the beginning
+  mutate(
+    std_mrn = gsub("^0+", "", ri_patient_mrn),
+    # ri_date does not always match the timestamp variable so make a new date 
+    # variable based on the ending timestamp
+    end_date = as.Date(timestamp_end)
+  ) %>% relocate(std_mrn, .after = ri_patient_mrn) 
+
+# Date range
+start_date <- min(as.Date(dt_data$ri_timestamp_start))
+end_date <- max(as.Date(dt_data$timestamp_end))
+
+# Reports made
+intended_reports_made <- aps_reports_data %>% 
+  select(ar_mrn, ar_encounter_date) %>%
+  filter(between(as.Date(ar_encounter_date), start_date, end_date)) %>% 
+  # Standardize the MRN to remove trailing zeros at the beginning
+  mutate(
+    std_mrn = gsub("^0+", "", ar_mrn)
+  ) %>% relocate(std_mrn, .after = ar_mrn) %>%
+  right_join(reports_intended, 
+             by = c("ar_encounter_date" = "end_date", "std_mrn"))
+```
+
+
+# Bivariate visuals data
+
+Group by Suspect EM
+
+```{r}
+bivar_plot_data <- function(vars, level_list, labels_list){
+  plot_data %>% filter(var %in% vars) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value, 
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in dataframe is maintained in the plot
+      label = factor(label, levels = rev(unique(label)))
+    ) %>%
+    # Create proportions
+    reframe(
+    inst_count = n(), 
+    .by = c(calc_institution_7cat_f, suspect_em_2cat_f, label, value)
+    ) %>% 
+    # Include counts for factor levels that have zero counts
+    group_by(calc_institution_7cat_f, suspect_em_2cat_f, label) %>%
+    tidyr::complete(value) %>%
+    ungroup() %>%
+    mutate(
+      inst_count = tidyr::replace_na(inst_count, 0)
+      ) %>%
+    # Calulate totals and proportions for each institution
+    mutate(
+      inst_total = sum(inst_count), .by = c(calc_institution_7cat_f, 
+                                            suspect_em_2cat_f, label),
+      inst_perc = (inst_count/inst_total) *100,
+      inst_perc_label = paste0(format(round(inst_perc, 1), nsmall = 1), "%")
+      ) %>%
+    # Calulate totals and proportions for all
+    mutate(
+      count = sum(inst_count), .by = c(suspect_em_2cat_f, label, value)
+      ) %>%
+    mutate(
+      total = sum(count), .by = c(calc_institution_7cat_f, suspect_em_2cat_f,
+                                  label),
+      perc = (count/total) *100, 
+      perc_label = paste0(format(round(perc, 1), nsmall = 1), "%")
+      ) %>% select(-c(total, inst_total))
+}
+```
+
+## Indicators of EM Module and Suspect EM
+
+```{r}
+ind_sus_em_plot_data <- bivar_plot_data(ind_em_vars, 
+                                        level_list = c("Yes", "No", 
+                                                       "Unable to assess"),
+                                        labels_list = ind_em_labs
+)
+```
+
+```{r}
+# Overall data for plot not grouped by institution
+ind_sus_em_plot_data_all <- ind_sus_em_plot_data %>% 
+  select(-c(calc_institution_7cat_f, inst_count, inst_perc, inst_perc_label)
+         ) %>% 
+  distinct()
+```
+
+```{r}
+# Overall data for table not grouped by institution
+ind_sus_em_table_data_all <- ind_sus_em_plot_data_all %>%
+  select(-c(perc)) %>%
+  mutate(
+    label = factor(label, levels = ind_em_labs)
+  ) %>% arrange(label) %>%
+  # Add shade column
+  add_shade_column_x_rows(., 4)
+```
+
+```{r}
+# Data for tables grouped by institution
+ind_sus_em_table_data <- ind_sus_em_plot_data %>%
+  select(-c(count, perc, perc_label, inst_perc)) %>% 
+  # Arrange df by levels of indicators em label variable
+  mutate(
+    label = factor(label, levels = ind_em_labs)
+  ) %>% arrange(label)
+```
+
+## Suspect EM and EM Type
+
+```{r}
+em_type_labs <- c( "Self-neglect suspected", "Financial exploitation suspected", 
+                   "Emotional or psychological abuse suspected", 
+                   "Physical abuse suspected",  "Sexual abuse suspected", 
+                   "Caregiver neglect suspected", "Abandonment suspected", 
+                   "Other mistreatment type suspected", 
+                   "Dont know/ Not sure of mistreatment type")
+```
+
+```{r}
+sus_type_em_plot_data <- bivar_plot_data(em_type_vars, level_list = c("Yes", "No"),
+                                        labels_list = em_type_labs) %>%
+  filter(suspect_em_2cat_f == "Yes")
+```
+
+```{r}
+# Overall data for plot not grouped by institution
+sus_type_em_plot_data_all <- sus_type_em_plot_data %>% 
+  select(-c(calc_institution_7cat_f, inst_count, inst_perc, inst_perc_label)
+         ) %>% 
+  distinct()
+```
+
+```{r}
+# Overall data for table not grouped by institution
+sus_type_em_table_data_all <- sus_type_em_plot_data_all %>%
+  select(-c(perc)) %>% 
+  mutate(
+    label = factor(label, levels = em_type_labs)
+  ) %>% arrange(label) %>%
+  # Add shade column
+  add_shade_column_x_rows(., 3)
+```
+
+```{r}
+# Data for tables grouped by institution
+sus_type_em_table_data <- sus_type_em_plot_data %>%
+  select(-c(count, perc, perc_label, inst_perc)) %>%  
+  # Arrange df by levels of indicators em label variable
+  mutate(
+    label = factor(label, levels = em_type_labs)
+  ) %>% arrange(label)
+```
+
+
+# Save data
+
+```{r}
+path <- here::here("data", "detect_tool_pilot", "dashboard_prepped_data.RData")
+save(dt_data, missing_plot_data, baylor_missing_plot_data, jh_missing_plot_data,
+     ucsf_missing_plot_data, uab_missing_plot_data, utsw_missing_plot_data,
+     lbj_missing_plot_data, utp_missing_plot_data, text_box_table_data, 
+     ind_em_plot_data, ind_em_plot_data_all, em_type_plot_data, 
+     em_type_plot_data_all, reports_intended, intended_reports_made, 
+     ind_sus_em_plot_data, ind_sus_em_plot_data_all, ind_sus_em_table_data_all, 
+     ind_sus_em_table_data, sus_type_em_plot_data, sus_type_em_plot_data_all,
+     sus_type_em_table_data_all, sus_type_em_table_data, 
+     file = path)
+
+rm(list = ls())
+```
+
+
