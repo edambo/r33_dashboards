@@ -350,7 +350,7 @@ label_order <- c(
 
 create_missing_plot_data <- function(data){
   data %>% 
-    # Select only the record id and the missng data variables
+    # Select only the record id and the missing data variables
     select(record_id, ends_with("_miss")) %>%
     # Remove "_miss" suffix
     rename_with(~gsub("_miss", "", .x)) %>%
@@ -363,7 +363,8 @@ create_missing_plot_data <- function(data){
         is.na(missingness) ~ "Not applicable"
       ),
       missingness_3cat_f = factor(missingness_3cat_f, 
-                       levels = c("Missing", "Not missing", "Not applicable")
+                       levels = c("Missing", "Not missing", "Not applicable"),
+                       exclude = NULL
                        )
     ) %>%
     # Create count column
@@ -508,33 +509,15 @@ plot_vars <- c("record_id", "calc_institution_7cat_f", "ri_necessities_3cat_f",
 
 ```{r}
 plot_data <- dt_data %>% select(all_of(plot_vars)) %>%
-  tidyr::pivot_longer(-c(record_id, calc_institution_7cat_f), 
+  tidyr::pivot_longer(-c(record_id, calc_institution_7cat_f, suspect_em_2cat_f), 
                       names_to = "var", values_to = "value") %>%
   # Add labels
   left_join(var_desc, by = c("var" = "variable"))
 ```
 
 ```{r}
-# Function for creating data subsets
-data_subset <- function(vars, level_list){
-  df <- plot_data %>% filter(var %in% vars) %>%
-    mutate(
-      # Convert NA into a character value
-      value = case_when(is.na(value) ~ "NA",
-                        TRUE ~ value),
-      value = factor(value, 
-                     levels = c(level_list, "NA"),
-                     exclude = NULL
-                     ),
-      # Ensure the order of labels in dataframe is maintained in the plot
-      label = factor(label, levels = rev(unique(label)))
-    )
-}
-```
-
-```{r}
 univar_plot_data <- function(vars, level_list, labels_list){
-  plot_data %>% filter(var %in% vars) %>%
+  plot_data %>% filter(var %in% vars) %>% select(-c(suspect_em_2cat_f)) %>%
     mutate(
       # Convert NA into a character value
       value = case_when(is.na(value) ~ "NA",
@@ -544,7 +527,7 @@ univar_plot_data <- function(vars, level_list, labels_list){
                      exclude = NULL
                      ),
       # Ensure the order of labels in dataframe is maintained in the plot
-      label = factor(label, levels = rev(unique(label)))
+      label = factor(label, levels = rev(unique(labels_list)))
     ) %>%
     # Create proportions
     reframe(
@@ -563,7 +546,7 @@ univar_plot_data <- function(vars, level_list, labels_list){
       inst_perc = paste0(format(round((inst_count/inst_total) *100, 1),
                                 nsmall = 1), "%")
       ) %>%
-    # Calulate totals and proportions for all
+    # Calculate totals and proportions for all
     mutate(
       count = sum(inst_count), .by = c(label, value)
       ) %>%
@@ -574,16 +557,67 @@ univar_plot_data <- function(vars, level_list, labels_list){
 }
 ```
 
+```{r}
+univar_plot_data <- function(vars, level_list, labels_list){
+  plot_data %>% filter(var %in% vars) %>% select(-c(suspect_em_2cat_f)) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value,
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in data frame is maintained in the plot
+      label = factor(label, levels = rev(unique(labels_list)))
+    ) %>%
+    # Create proportions
+    reframe(
+    inst_count = n(), .by = c(calc_institution_7cat_f, label, value)
+    ) %>%
+    # Include counts for factor levels that have zero counts
+    group_by(calc_institution_7cat_f, label) %>%
+    tidyr::complete(value) %>%
+    ungroup() %>%
+    mutate(
+      inst_count = tidyr::replace_na(inst_count, 0)
+      ) %>%
+    # Calulate totals and proportions for each institution
+    mutate(
+      inst_total = sum(inst_count), .by = c(calc_institution_7cat_f, label),
+      inst_perc = paste0(format(round((inst_count/inst_total) *100, 1),
+                                nsmall = 1), "%")
+      ) %>%
+    # Calculate totals and proportions for all
+    mutate(
+      count = sum(inst_count), .by = c(label, value)
+      ) %>%
+    mutate(
+      total = sum(count), .by = c(calc_institution_7cat_f, label),
+      perc = paste0(format(round((count/total) *100, 1), nsmall = 1), "%")
+      )
+}
+```
 
 ## Indicators of abuse
 
 ```{r}
-ind_em_plot_data <- univar_plot_data(ind_em_vars, 
-                                        level_list = c("Yes", "No", 
-                                                       "Unable to assess"))
+ind_em_labs <- c(
+  "Absence of necessities", "Environment health or safety concern", "Defensive", 
+  "Chemically sedated", "Isolated", "Anxious", "Prohibited", "Unmet needs",
+  "Unexplained injuries" 
+  )
 ```
 
 ```{r}
+ind_em_plot_data <- univar_plot_data(ind_em_vars, 
+                                        level_list = c("Yes", "No", 
+                                                       "Unable to assess"),
+                                     labels_list = ind_em_labs)
+```
+
+```{r}
+# Overall data not grouped by institution
 ind_em_plot_data_all <- ind_em_plot_data %>% select(-c(calc_institution_7cat_f, inst_count,
                                             inst_perc, inst_total)) %>% 
   distinct()
@@ -592,12 +626,24 @@ ind_em_plot_data_all <- ind_em_plot_data %>% select(-c(calc_institution_7cat_f, 
 ## EM Type
 
 ```{r}
+em_type_labs <- c(
+  "Self-neglect suspected", "Financial exploitation suspected", 
+  "Emotional or psychological abuse suspected", "Physical abuse suspected", 
+  "Sexual abuse suspected", "Caregiver neglect suspected", 
+  "Abandonment suspected", "Other mistreatment type suspected",
+  "Dont know/ Not sure of mistreatment type"
+  )
+```
+
+```{r}
 em_type_plot_data <- univar_plot_data(em_type_vars, 
-                                        level_list = c("Yes", "No"))
+                                        level_list = c("Yes", "No"),
+                                      labels_list = em_type_labs)
 
 ```
 
 ```{r}
+# Overall data not grouped by institution
 em_type_plot_data_all <- em_type_plot_data %>% select(-c(calc_institution_7cat_f, inst_count,
                                             inst_perc, inst_total)) %>% 
   distinct()
@@ -640,77 +686,91 @@ intended_reports_made <- aps_reports_data %>%
 
 # Bivariate visuals data
 
-```{r}
-# Number of cases where EM was suspected
-suspect_em_no <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% nrow()
+Group by Suspect EM
 
-# Number of cases where EM was not suspected
-not_suspect_em_no <- dt_data %>% filter(suspect_em_2cat_f == "No") %>% nrow()
+```{r}
+bivar_plot_data <- function(vars, level_list, labels_list){
+  plot_data %>% filter(var %in% vars) %>%
+    mutate(
+      # Convert NA into a character value
+      value = case_when(is.na(value) ~ "NA",
+                        TRUE ~ value),
+      value = factor(value, 
+                     levels = c(level_list, "NA"),
+                     exclude = NULL
+                     ),
+      # Ensure the order of labels in dataframe is maintained in the plot
+      label = factor(label, levels = rev(unique(label)))
+    ) %>%
+    # Create proportions
+    reframe(
+    inst_count = n(), 
+    .by = c(calc_institution_7cat_f, suspect_em_2cat_f, label, value)
+    ) %>% 
+    # Include counts for factor levels that have zero counts
+    group_by(calc_institution_7cat_f, suspect_em_2cat_f, label) %>%
+    tidyr::complete(value) %>%
+    ungroup() %>%
+    mutate(
+      inst_count = tidyr::replace_na(inst_count, 0)
+      ) %>%
+    # Calulate totals and proportions for each institution
+    mutate(
+      inst_total = sum(inst_count), .by = c(calc_institution_7cat_f, 
+                                            suspect_em_2cat_f, label),
+      inst_perc = (inst_count/inst_total) *100,
+      inst_perc_label = paste0(format(round(inst_perc, 1), nsmall = 1), "%")
+      ) %>%
+    # Calulate totals and proportions for all
+    mutate(
+      count = sum(inst_count), .by = c(suspect_em_2cat_f, label, value)
+      ) %>%
+    mutate(
+      total = sum(count), .by = c(calc_institution_7cat_f, suspect_em_2cat_f,
+                                  label),
+      perc = (count/total) *100, 
+      perc_label = paste0(format(round(perc, 1), nsmall = 1), "%")
+      ) %>% select(-c(total, inst_total))
+}
 ```
 
 ## Indicators of EM Module and Suspect EM
 
 ```{r}
-ind_em_labs <- c(
-  "Absence of necessities", "Environment health or safety\nconcern", "Defensive", 
-  "Chemically sedated", "Isolated", "Anxious", "Prohibited", "Unmet needs",
-  "Unexplained injuries" 
-  )
+ind_sus_em_plot_data <- bivar_plot_data(ind_em_vars, 
+                                        level_list = c("Yes", "No", 
+                                                       "Unable to assess"),
+                                        labels_list = ind_em_labs
+)
 ```
 
 ```{r}
-# Character vector of filters
-ind_sus_em_plot_data <- dt_data %>% 
-  select(record_id, all_of(ind_em_vars), suspect_em_2cat_f) %>%
-  tidyr::pivot_longer(all_of(ind_em_vars), 
-                      names_to = "em_ind_var", values_to = "em_ind_value") %>%
-  # Add labels
-  left_join(var_desc, by = c("em_ind_var" = "variable")) %>%
-  rename(
-    "ind_em_label" = "label"
-  ) %>%
-  mutate(
-    # Include line breaks in labels
-    ind_em_label = stringr::str_wrap(ind_em_label, width = 30),
-    ind_em_label = factor(ind_em_label, levels = rev(ind_em_labs)),
-    # Convert NA into a character value
-    em_ind_value = case_when(is.na(em_ind_value) ~ "NA",
-                      TRUE ~ em_ind_value),
-    em_ind_value = factor(em_ind_value, 
-                   levels = c("Yes", "No", "Unable to assess", "NA"),
-                   exclude = NULL
-                   )
-  ) %>%
-  # Replace the EM indicator variable name column with the labels
-  relocate(ind_em_label, .after = suspect_em_2cat_f) %>%
-  select(-c(description, em_ind_var)) %>%
-  reframe(
-    count = n(), .by = c(suspect_em_2cat_f,ind_em_label, em_ind_value)
-  ) %>%   
-  # Include counts for factor levels that have zero counts
-  group_by(suspect_em_2cat_f, ind_em_label) %>%
-  tidyr::complete(em_ind_value) %>%
-  ungroup() %>%
-  mutate(
-    count = tidyr::replace_na(count, 0),
-    perc = case_when(
-      suspect_em_2cat_f == "Yes" ~ (count/suspect_em_no) *100,
-      suspect_em_2cat_f == "No" ~ (count/not_suspect_em_no) *100
-      ),
-    perc_label = paste0(format(round(perc, 1), nsmall = 1), "%")
-    ) 
+# Overall data for plot not grouped by institution
+ind_sus_em_plot_data_all <- ind_sus_em_plot_data %>% 
+  select(-c(calc_institution_7cat_f, inst_count, inst_perc, inst_perc_label)
+         ) %>% 
+  distinct()
 ```
 
 ```{r}
-ind_sus_em_table_data <- ind_sus_em_plot_data %>%
+# Overall data for table not grouped by institution
+ind_sus_em_table_data_all <- ind_sus_em_plot_data_all %>%
   select(-c(perc)) %>%
   mutate(
-    ind_em_label = factor(ind_em_label, levels = ind_em_labs)
-  ) %>% arrange(ind_em_label)
+    label = factor(label, levels = ind_em_labs)
+  ) %>% arrange(label) %>%
+  # Add shade column
+  add_shade_column_x_rows(., 4)
 ```
 
 ```{r}
-ind_sus_em_table_data <- add_shade_column_x_rows(ind_sus_em_table_data, 4)
+# Data for tables grouped by institution
+ind_sus_em_table_data <- ind_sus_em_plot_data %>%
+  select(-c(count, perc, perc_label, inst_perc)) %>% 
+  # Arrange df by levels of indicators em label variable
+  mutate(
+    label = factor(label, levels = ind_em_labs)
+  ) %>% arrange(label)
 ```
 
 ## Suspect EM and EM Type
@@ -725,49 +785,38 @@ em_type_labs <- c( "Self-neglect suspected", "Financial exploitation suspected",
 ```
 
 ```{r}
-sus_type_em_plot_data <- dt_data %>%
-  select(record_id, suspect_em_2cat_f, all_of(em_type_vars)) %>%
-  tidyr::pivot_longer(all_of(em_type_vars), 
-                      names_to = "em_type_var", values_to = "em_type_value") %>%
-  # Add labels
-  left_join(var_desc, by = c("em_type_var" = "variable")) %>%
-  filter(suspect_em_2cat_f == "Yes") %>%
-  # Make `label` a factor variable
-  mutate(
-    label = factor(label, levels = rev(em_type_labs)),
-    # Convert NA into a character value
-    em_type_value = case_when(is.na(em_type_value) ~ "NA",
-                      TRUE ~ em_type_value),
-    em_type_value = factor(em_type_value, 
-                   levels = c("Yes", "No", "NA"),
-                   exclude = NULL
-                   )
-  ) %>% 
-  # Relocate the label and remove the description variable
-  relocate(label, .after = suspect_em_2cat_f) %>%
-  select(-c(description, em_type_var, suspect_em_2cat_f)) %>%
-  reframe(
-    count = n(), .by = c(label, em_type_value)
-  ) %>%   
-  # Include counts for factor levels that have zero counts
-  group_by(label) %>%
-  tidyr::complete(em_type_value) %>%
-  ungroup() %>%
-  mutate(
-    count = tidyr::replace_na(count, 0),
-    perc = paste0(format(round((count/suspect_em_no) *100, 1), nsmall = 1), "%")
-    )
+sus_type_em_plot_data <- bivar_plot_data(em_type_vars, level_list = c("Yes", "No"),
+                                        labels_list = em_type_labs) %>%
+  filter(suspect_em_2cat_f == "Yes")
 ```
 
 ```{r}
+# Overall data for plot not grouped by institution
+sus_type_em_plot_data_all <- sus_type_em_plot_data %>% 
+  select(-c(calc_institution_7cat_f, inst_count, inst_perc, inst_perc_label)
+         ) %>% 
+  distinct()
+```
+
+```{r}
+# Overall data for table not grouped by institution
+sus_type_em_table_data_all <- sus_type_em_plot_data_all %>%
+  select(-c(perc)) %>% 
+  mutate(
+    label = factor(label, levels = em_type_labs)
+  ) %>% arrange(label) %>%
+  # Add shade column
+  add_shade_column_x_rows(., 3)
+```
+
+```{r}
+# Data for tables grouped by institution
 sus_type_em_table_data <- sus_type_em_plot_data %>%
+  select(-c(count, perc, perc_label, inst_perc)) %>%  
+  # Arrange df by levels of indicators em label variable
   mutate(
     label = factor(label, levels = em_type_labs)
   ) %>% arrange(label)
-```
-
-```{r}
-sus_type_em_table_data <- add_shade_column_x_rows(sus_type_em_table_data, 3)
 ```
 
 
@@ -775,12 +824,14 @@ sus_type_em_table_data <- add_shade_column_x_rows(sus_type_em_table_data, 3)
 
 ```{r}
 path <- here::here("data", "detect_tool_pilot", "dashboard_prepped_data.RData")
-save(missing_plot_data, baylor_missing_plot_data, jh_missing_plot_data,
+save(dt_data, missing_plot_data, baylor_missing_plot_data, jh_missing_plot_data,
      ucsf_missing_plot_data, uab_missing_plot_data, utsw_missing_plot_data,
      lbj_missing_plot_data, utp_missing_plot_data, text_box_table_data, 
-     ind_em_plot_data, ind_em_plot_data_all, em_type_plot_data, em_type_plot_data_all,
-     reports_intended, intended_reports_made, ind_sus_em_plot_data, 
-     ind_sus_em_table_data, sus_type_em_plot_data, sus_type_em_table_data, 
+     ind_em_plot_data, ind_em_plot_data_all, em_type_plot_data, 
+     em_type_plot_data_all, reports_intended, intended_reports_made, 
+     ind_sus_em_plot_data, ind_sus_em_plot_data_all, ind_sus_em_table_data_all, 
+     ind_sus_em_table_data, sus_type_em_plot_data, sus_type_em_plot_data_all,
+     sus_type_em_table_data_all, sus_type_em_table_data, 
      file = path)
 
 rm(list = ls())

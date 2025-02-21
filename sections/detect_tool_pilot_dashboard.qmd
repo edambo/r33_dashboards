@@ -40,8 +40,7 @@ load(path)
 <!-- Load functions -->
 
 ```{r}
-source(here::here("r", "format_table.R"))
-source(here::here("r", "gauge_chart.R"))
+source(here::here("r", "add_shade_column_x_rows.R")) # Adding shade to DT tables
 ```
 
 <!-- Custom functions -->
@@ -94,7 +93,7 @@ side_bar_df %>% flextable() %>%
 ```
 
 ```{r, echo=FALSE}
-subjects <- pilot_data %>% select(ri_patient_mrn) %>% unique() %>% nrow()
+patients <- pilot_data %>% select(ri_patient_mrn) %>% unique() %>% nrow()
 clinicians <- pilot_data %>% select(ri_clinician_id_name) %>% unique() %>% nrow()
 survey_responses <- pilot_data %>% nrow()
 time_period <- paste(min(as.Date(pilot_data$ri_timestamp_start)), "to", 
@@ -103,8 +102,8 @@ time_period <- paste(min(as.Date(pilot_data$ri_timestamp_start)), "to",
 head_2 <- "This data references:\n\n"
 
 data.frame(
-  names = c("Subjects", "Clinicians", "Survey Responses", "Time Period"),
-  values = c(subjects, clinicians, survey_responses, time_period)
+  names = c("Patients", "Clinicians", "Survey Responses", "Time Period"),
+  values = c(patients, clinicians, survey_responses, time_period)
 ) %>% flextable() %>%
   delete_part(part = "header") %>%
   bold(j = 1, part = "body") %>%
@@ -154,7 +153,7 @@ text_box_items <- c("ri_environment_un_reason", "ri_caregiver_oth",
 #| title: Screenings Started
 #| content: valuebox
 
-started_screenings <- pilot_data %>% filter(if_any(
+started_screenings <- dt_data %>% filter(if_any(
   .cols = c(all_of(ind_em_vars)),
   .fns = ~!is.na(.x)
 )) %>% nrow()
@@ -174,12 +173,7 @@ list(
 #| title: Screenings Completed
 #| content: valuebox
 
-# completed_screenings <- pilot_data %>% filter(if_all(
-#   .cols = c(ri_patient_mrn, suspect_em_2cat),
-#   .fns = ~!is.na(.x)
-# )) %>% nrow()
-
-completed_screenings <- pilot_data %>% 
+completed_screenings <- dt_data %>% 
   filter(reporting_instrument_complete == "Complete") %>% nrow()
 
 # Create value box  
@@ -199,7 +193,7 @@ list(
 list(
   icon = "person",
   color = "vb-green",
-  value = subjects
+  value = patients
 )
 ```
 
@@ -210,7 +204,7 @@ list(
 #| title: Screening Items Complete but EM Status Impression Incomplete
 #| content: valuebox
 
-em_status_incomplete <- pilot_data %>% filter(if_all(
+em_status_incomplete <- dt_data %>% filter(if_all(
   .cols = all_of(ind_em_vars),
   .fns = ~ !is.na(.x)
 )) %>% filter(is.na(suspect_em_2cat )) %>% nrow()
@@ -228,7 +222,7 @@ list(
 #| title: EM Suspected
 #| content: valuebox
 
-suspect_em_count <- pilot_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
   nrow()
 
 # Create value box  
@@ -308,39 +302,49 @@ list(
 
 ```{r, echo = FALSE}
 #| title: Missingness Summary
-# Plot missing data
-gg_missing <- ggplot(missing_plot_data, aes(x = count, y = label, fill = missingness_3cat_f)) +
-  geom_bar(stat = "identity", color = "transparent", show.legend = TRUE) +
-  scale_fill_manual("Legend", values = c("Missing" = "#AFD5E0", 
-                                         "Not missing" = "#219ebc",
-                                         "Not applicable" = "#023047"),
-                    drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
 
+# Function for missing data
+missing_data_plot <- function(data){
+  gg_missing <- ggplot(data, aes(x = count, y = label, fill = missingness_3cat_f,
+                                 text = paste0("Count: ", count))) +
+    geom_bar(stat = "identity", color = "transparent", show.legend = FALSE) +
+    scale_fill_manual("Legend", values = c("Missing" = "#AFD5E0", 
+                                           "Not missing" = "#219ebc",
+                                           "Not applicable" = "#023047"),
+                      drop = FALSE) +
+    theme_classic() + 
+    theme(axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  
+  
+  ggplotly(gg_missing, tooltip = c("text")) %>%
+  layout(
+         xaxis = list(fixedrange = TRUE),
+         yaxis = list(fixedrange = TRUE)
+  )  
+}
 
-ggplotly(gg_missing,tooltip = c("count")) %>%
-layout(
-       xaxis = list(fixedrange = TRUE),
-       yaxis = list(fixedrange = TRUE)
-)
+missing_data_plot(missing_plot_data)
 ```
 
 ## Row
 
 ```{r, echo = FALSE}
 #| title: Textbox Data
-DT::datatable(text_box_table_data, 
-              options = list(autoWidth = TRUE, 
-                             columnDefs = list(
-                               list(visible=FALSE, 
-                                    targets = c("calc_institution_7cat_f")))), 
-              colnames = c("Record ID", "Date", "Institution", "Variable Label", 
-                           "Text Box Content"),
-              filter = list(
-                position = 'top', clear = FALSE)
-)
+text_box_dt <- function(data){
+  DT::datatable(data, 
+                options = list(autoWidth = TRUE, 
+                               columnDefs = list(
+                                 list(visible=FALSE, 
+                                      targets = c("calc_institution_7cat_f")))), 
+                colnames = c("Record ID", "Date", "Institution", "Variable Label", 
+                             "Text Box Content"),
+                filter = list(
+                  position = 'top', clear = FALSE)
+  )  
+}
+
+text_box_dt(text_box_table_data)
 ```
 
 
@@ -350,51 +354,66 @@ DT::datatable(text_box_table_data,
 
 ```{r}
 #| title: Indicators of EM Module Summary
-gg_ind_em <- ggplot(ind_em_plot_data_all, aes(x = count, y = label, fill = value, 
-                          text = paste0("Count: ", count, "\nProportion: ",
-                                        perc))) +
-  geom_bar(stat = "identity", show.legend=FALSE) +
-  scale_fill_manual("Legend",
-                    values = c("Yes" = "#219ebc", 
-                               "No" = "#AFD5E0",
-                               "Unable to assess" = "#023047",
-                               "NA" = "#3C5967"), drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
 
-ggplotly(gg_ind_em, tooltip = c("text")) %>%
-  layout(
-         xaxis = list(fixedrange = TRUE),
-         yaxis = list(
-           # range = list(0,10),
-           fixedrange = TRUE)
-  )
+ind_em_plot <- function(data, count_var, perc_var){
+  gg_ind_em <- ggplot(data, aes(x = eval(parse(text = count_var)), 
+                                y = label, fill = value, 
+                            text = paste0("Count: ", 
+                                          eval(parse(text = count_var)), 
+                                          "\nProportion: ",
+                                          eval(parse(text = perc_var))))) +
+    geom_bar(stat = "identity", show.legend=FALSE) +
+    scale_fill_manual("Legend",
+                      values = c("Yes" = "#219ebc", 
+                                 "No" = "#AFD5E0",
+                                 "Unable to assess" = "#023047",
+                                 "NA" = "#3C5967"), drop = FALSE) +
+    theme_classic() + 
+    theme(axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  
+  ggplotly(gg_ind_em, tooltip = c("text")) %>%
+    layout(
+           xaxis = list(fixedrange = TRUE),
+           yaxis = list(
+             # range = list(0,10),
+             fixedrange = TRUE)
+    )  
+}
+
+ind_em_plot(ind_em_plot_data_all, "count", "perc")
 ```
 
 ```{r, echo = FALSE}
 #| title: EM Type Summary
 
-gg_em_type <- ggplot(em_type_plot_data_all, 
-                      aes(x = count, y = label, fill = value, 
-                          text = paste0("Count: ", count, "\nProportion: ",
-                                        perc))) +
-  geom_bar(stat = "identity", show.legend=FALSE) +
-  scale_fill_manual("Legend",
-                    values = c("Yes" = "#BA21B3", 
-                               "No" = "#CC9EC9",
-                               "NA" = "#460242"), drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
-
-ggplotly(gg_em_type, tooltip = c("text")) %>%
-  layout(
-         xaxis = list(fixedrange = TRUE),
-         yaxis = list(
-           # range = list(0,10),
-           fixedrange = TRUE)
-  )
+em_type_plot <- function(data, count_var, perc_var){
+  gg_em_type <- ggplot(data, 
+                        aes(x = eval(parse(text = count_var)), y = label, 
+                            fill = value, 
+                            text = paste0("Count: ", 
+                                          eval(parse(text = count_var)), 
+                                          "\nProportion: ",
+                                          eval(parse(text = perc_var))))) +
+    geom_bar(stat = "identity", show.legend=FALSE) +
+    scale_fill_manual("Legend",
+                      values = c("Yes" = "#BA21B3", 
+                                 "No" = "#CC9EC9",
+                                 "NA" = "#460242"), drop = FALSE) +
+    theme_classic() + 
+    theme(axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  
+  ggplotly(gg_em_type, tooltip = c("text")) %>%
+    layout(
+           xaxis = list(fixedrange = TRUE),
+           yaxis = list(
+             # range = list(0,10),
+             fixedrange = TRUE)
+    )  
+}
+  
+em_type_plot(em_type_plot_data_all, "count", "perc")
 ```
 
 ## Row
@@ -403,53 +422,82 @@ ggplotly(gg_em_type, tooltip = c("text")) %>%
 
 ```{r, echo = FALSE}
 #| title: Indicators of EM Module By Suspect EM
-facet_labels <- c(
-                    `Yes` = "EM Suspected",
-                    `No` = "EM not Suspected"
-                    )
 
-gg_ind_sus_em <- ggplot(ind_sus_em_plot_data, 
-                      aes(x = perc, y = ind_em_label, fill = em_ind_value,
-                          text = paste0("Count: ", count, "\nProportion: ",
-                                        perc_label))) +
-  geom_bar(stat = "identity", show.legend=TRUE) +
-  scale_fill_manual("Legend",
-                    values = c("Yes" = "#219ebc", 
-                               "No" = "#AFD5E0",
-                               "Unable to assess" = "#023047",
-                               "NA" = "#3C5967"), drop = FALSE) +
-  scale_y_discrete(drop = FALSE) +
-  theme_bw() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank()) +
-  facet_wrap(~ suspect_em_2cat_f, labeller = as_labeller(facet_labels), 
-  scales = "free_x")
+ind_em_sus_em_plot <- function(data, count_var, perc_var, perc_label_var){
+  facet_labels <- c(
+                      `Yes` = "EM Suspected",
+                      `No` = "EM not Suspected"
+                      )
+  # Avoid ggplot facet error due to empty data frame 
+  if(nrow(data) == 0){
+    gg_ind_sus_em <- ggplot(data,
+                          aes(x = eval(parse(text = perc_var)), y = label, 
+                              fill = value,
+                              text = paste0("Count: ", 
+                                            eval(parse(text = count_var)), 
+                                            "\nProportion: ",
+                                            eval(parse(text = perc_label_var)))
+                              )) +
+      geom_bar(stat = "identity", show.legend=TRUE) +
+      theme_bw() +
+      theme(axis.title.x=element_blank(),
+            axis.title.y=element_blank())     
+  }else{
+    gg_ind_sus_em <- ggplot(data,
+                          aes(x = eval(parse(text = perc_var)), y = label, 
+                              fill = value,
+                              text = paste0("Count: ", 
+                                            eval(parse(text = count_var)), 
+                                            "\nProportion: ",
+                                            eval(parse(text = perc_label_var)))
+                              )) +
+      geom_bar(stat = "identity", show.legend = TRUE) +
+      scale_fill_manual("Legend",
+                        values = c("Yes" = "#219ebc", 
+                                   "No" = "#AFD5E0",
+                                   "Unable to assess" = "#023047",
+                                   "NA" = "#3C5967"), drop = FALSE) +
+      scale_y_discrete(drop = FALSE) +
+      theme_bw() + 
+      theme(axis.title.x = element_blank(),
+            axis.title.y = element_blank()) +
+      facet_wrap(~ suspect_em_2cat_f, labeller = as_labeller(facet_labels), 
+                 scales = "free_x")    
+  }
+  
+  ggplotly(gg_ind_sus_em, tooltip = c("text")) %>%
+      layout(
+             xaxis = list(fixedrange = TRUE),
+             yaxis = list(
+               # range = list(0,10),
+               fixedrange = TRUE)
+      )
+}
 
-ggplotly(gg_ind_sus_em, tooltip = c("text")) %>%
-    layout(
-           xaxis = list(fixedrange = TRUE),
-           yaxis = list(
-             # range = list(0,10),
-             fixedrange = TRUE)
-    ) 
+ind_em_sus_em_plot(ind_sus_em_plot_data_all, "count", "perc", "perc_label")
 ```
 
 ```{r, echo = FALSE}
 #| title: Table
-DT::datatable(ind_sus_em_table_data, class = list(stripe = FALSE),
-              options = list(autoWidth = TRUE, 
-                             columnDefs = list(
-                               list(visible=FALSE, 
-                                    targets = c("shade_col")))), 
-              colnames = c("Shade column","EM Suspected",  "EM Type Suspected", 
-                           "Response", "N", "Proportion"),
-              filter = list(
-                position = 'top', clear = FALSE)
-) %>% formatStyle(
-  'shade_col',
-  target = 'row',
-  backgroundColor = styleEqual(c(0, 1), c('transparent', '#EEEEEE'))
-)
+
+ind_em_sus_em_dt <- function(data){
+  DT::datatable(data, class = list(stripe = FALSE),
+                options = list(autoWidth = TRUE, 
+                               columnDefs = list(
+                                 list(visible=FALSE, 
+                                      targets = c("shade_col")))), 
+                colnames = c("Shade column","EM Suspected",  "Indicator of Abuse", 
+                             "Response", "N", "Proportion"),
+                filter = list(
+                  position = 'top', clear = FALSE)
+  ) %>% formatStyle(
+    'shade_col',
+    target = 'row',
+    backgroundColor = styleEqual(c(0, 1), c('transparent', '#EEEEEE'))
+  )  
+}
+
+ind_em_sus_em_dt(ind_sus_em_table_data_all)
 ```
 
 
@@ -460,48 +508,1966 @@ DT::datatable(ind_sus_em_table_data, class = list(stripe = FALSE),
 ```{r, echo = FALSE}
 #| title: EM Types When EM is Suspected - Plot
 
-gg_sus_type_em <- ggplot(sus_type_em_plot_data, 
-                      aes(x = count, y = label, fill = em_type_value, 
-                          text = paste0("Count: ", count, "\nProportion: ",
-                                        perc))) +
-  geom_bar(stat = "identity", show.legend=TRUE) +
-  scale_fill_manual("Legend",
-                    values = c("Yes" = "#BA21B3", 
-                               "No" = "#CC9EC9",
-                               "NA" = "#460242"), drop = FALSE) +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_blank())
+em_type_sus_em_plot <- function(data, count_var, perc_label_var){
+  gg_sus_type_em <- ggplot(data, 
+                        aes(x = eval(parse(text = count_var)), y = label, 
+                            fill = value, 
+                            text = paste0("Count: ", 
+                                          eval(parse(text = count_var)), 
+                                          "\nProportion: ",
+                                          eval(parse(text = perc_label_var))))) +
+    geom_bar(stat = "identity", show.legend=TRUE) +
+    scale_fill_manual("Legend",
+                      values = c("Yes" = "#BA21B3", 
+                                 "No" = "#CC9EC9",
+                                 "NA" = "#460242"), drop = FALSE) +
+    theme_classic() + 
+    theme(axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  
+  ggplotly(gg_sus_type_em, tooltip = c("text")) %>%
+    layout(
+           xaxis = list(fixedrange = TRUE),
+           yaxis = list(
+             # range = list(0,10),
+             fixedrange = TRUE)
+    )  
+}
 
-ggplotly(gg_sus_type_em, tooltip = c("text")) %>%
-  layout(
-         xaxis = list(fixedrange = TRUE),
-         yaxis = list(
-           # range = list(0,10),
-           fixedrange = TRUE)
-  )
+em_type_sus_em_plot(sus_type_em_plot_data_all, "count", "perc_label")
 ```
 
 ```{r, echo = FALSE}
 #| title: Table
-ind_sus_em_table_data %>%
-  DT::datatable(., class = list(stripe = FALSE), 
-                options = list(autoWidth = TRUE, columnDefs = list(list(
-              targets = 1,  # Column index starts from 0
-              visible = FALSE
-            ))), 
-              colnames = c("Shade column","Suspect EM", 
-                           "Indicators of EM module", "Response", "N", 
-                           "Proportion"),
-              filter = list(
-                position = 'top', clear = FALSE)
-) %>% formatStyle(
-  'shade_col',
-  target = 'row',
-  backgroundColor = styleEqual(c(0, 1), c('transparent', '#EEEEEE'))
+em_type_sus_em_dt <- function(data){
+  data %>%
+    DT::datatable(., class = list(stripe = FALSE), 
+                  options = list(autoWidth = TRUE, columnDefs = list(list(
+                targets = 1,  # Column index starts from 0
+                visible = FALSE
+              ))), 
+                colnames = c("Shade column","Suspect EM", 
+                             "EM Type Suspected", "Response", "N", 
+                             "Proportion"),
+                filter = list(
+                  position = 'top', clear = FALSE)
+  ) %>% formatStyle(
+    'shade_col',
+    target = 'row',
+    backgroundColor = styleEqual(c(0, 1), c('transparent', '#EEEEEE'))
+  )  
+}
+
+em_type_sus_em_dt(sus_type_em_table_data_all)
+```
+
+# Baylor
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+baylor_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = baylor_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+baylor_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = baylor_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+baylor_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = baylor_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+baylor_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = baylor_suspect_em_count
 )
 ```
 
 
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+baylor_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = baylor_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+baylor_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = baylor_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Texas Reporting Guidance Link Clicks
+#| content: valuebox
+
+tx_rg_link_clicks <- link_data %>% filter(link == "detect_tx") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = tx_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(baylor_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+baylor_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") 
+
+text_box_dt(baylor_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+baylor_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls")
+
+ind_em_plot(baylor_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+baylor_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls")
+
+em_type_plot(baylor_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+baylor_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls")
+
+ind_em_sus_em_plot(baylor_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+baylor_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(baylor_ind_sus_em_table_data)
+```
 
 
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+baylor_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls")
+
+em_type_sus_em_plot(baylor_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+baylor_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "Baylor College of Medicine - BT House Calls") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(baylor_sus_type_em_table_data)
+```
+
+
+# Johns Hopkins
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "Johns Hopkins - JHOME") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+jh_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = jh_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+jh_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = jh_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+jh_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = jh_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+jh_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = jh_suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+jh_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = jh_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+jh_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = jh_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Reporting Guidance Link Clicks
+#| content: valuebox
+
+md_rg_link_clicks <- link_data %>% filter(link == "detect_md") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = md_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(jh_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+jh_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") 
+
+text_box_dt(jh_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+jh_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME")
+
+ind_em_plot(jh_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+jh_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME")
+
+em_type_plot(jh_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+jh_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME")
+
+ind_em_sus_em_plot(jh_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+jh_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(jh_ind_sus_em_table_data)
+```
+
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+jh_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME")
+
+em_type_sus_em_plot(jh_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+jh_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "Johns Hopkins - JHOME") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(jh_sus_type_em_table_data)
+```
+
+
+
+# UCSF
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "UCSF - Care at Home Program") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+ucsf_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = ucsf_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+ucsf_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = ucsf_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+ucsf_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = ucsf_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+ucsf_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = ucsf_suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+ucsf_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = ucsf_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+ucsf_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = ucsf_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Reporting Guidance Link Clicks
+#| content: valuebox
+
+ca_rg_link_clicks <- link_data %>% filter(link == "detect_ca") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = ca_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(ucsf_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+ucsf_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") 
+
+text_box_dt(ucsf_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+ucsf_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program")
+
+ind_em_plot(ucsf_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+ucsf_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program")
+
+em_type_plot(ucsf_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+ucsf_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program")
+
+ind_em_sus_em_plot(ucsf_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+ucsf_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(ucsf_ind_sus_em_table_data)
+```
+
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+ucsf_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program")
+
+em_type_sus_em_plot(ucsf_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+ucsf_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UCSF - Care at Home Program") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(ucsf_sus_type_em_table_data)
+```
+
+
+# UAB
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+uab_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = uab_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+uab_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = uab_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+uab_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = uab_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+uab_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = uab_suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+uab_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = uab_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+uab_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = uab_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Reporting Guidance Link Clicks
+#| content: valuebox
+
+al_rg_link_clicks <- link_data %>% filter(link == "detect_al") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = al_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(uab_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+uab_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") 
+
+text_box_dt(uab_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+uab_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls")
+
+ind_em_plot(uab_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+uab_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls")
+
+em_type_plot(uab_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+uab_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls")
+
+ind_em_sus_em_plot(uab_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+uab_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(uab_ind_sus_em_table_data)
+```
+
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+uab_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls")
+
+em_type_sus_em_plot(uab_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+uab_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "University of Alabama - UAB House Calls") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(uab_sus_type_em_table_data)
+```
+
+
+# UTSW
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "UT Southwestern - COVE") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+utsw_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = utsw_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+utsw_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = utsw_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+utsw_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = utsw_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+utsw_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = utsw_suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+utsw_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = utsw_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+utsw_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = utsw_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Texas Reporting Guidance Link Clicks
+#| content: valuebox
+
+tx_rg_link_clicks <- link_data %>% filter(link == "detect_tx") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = tx_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(utsw_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+utsw_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") 
+
+text_box_dt(utsw_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+utsw_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE")
+
+ind_em_plot(utsw_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+utsw_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE")
+
+em_type_plot(utsw_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+utsw_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE")
+
+ind_em_sus_em_plot(utsw_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+utsw_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(utsw_ind_sus_em_table_data)
+```
+
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+utsw_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE")
+
+em_type_sus_em_plot(utsw_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+utsw_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UT Southwestern - COVE") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(utsw_sus_type_em_table_data)
+```
+
+
+# LBJ
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+lbj_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = lbj_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+lbj_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = lbj_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+lbj_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = lbj_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+lbj_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = lbj_suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+lbj_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = lbj_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+lbj_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = lbj_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Texas Reporting Guidance Link Clicks
+#| content: valuebox
+
+tx_rg_link_clicks <- link_data %>% filter(link == "detect_tx") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = tx_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(lbj_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+lbj_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") 
+
+text_box_dt(lbj_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+lbj_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls")
+
+ind_em_plot(lbj_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+lbj_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls")
+
+em_type_plot(lbj_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+lbj_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls")
+
+ind_em_sus_em_plot(lbj_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+lbj_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(lbj_ind_sus_em_table_data)
+```
+
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+lbj_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls")
+
+em_type_sus_em_plot(lbj_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+lbj_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - LBJ House Calls") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(lbj_sus_type_em_table_data)
+```
+
+
+# UTP
+
+## Row {height= "5%" .fill}
+
+<!-- Started screening is defined as a response for any of the screening items (Yes, No or Unable to assess) without considering any branching logic questions. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Started
+#| content: valuebox
+
+started_screenings <- dt_data %>% filter(if_any(
+  .cols = c(all_of(ind_em_vars)),
+  .fns = ~!is.na(.x)
+)) %>% filter(
+  calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>% 
+  nrow()
+
+# Create value box  
+list(
+  icon = "ui-checks-grid",
+  color = "vb-green",
+  value = started_screenings
+)
+```
+
+<!-- Completed screening is defined as when all required fields are completed. -->
+
+```{r}
+#| echo: false
+#| title: Screenings Completed
+#| content: valuebox
+
+utp_completed_screenings <- dt_data %>% 
+  filter(reporting_instrument_complete == "Complete") %>% 
+  filter(
+  calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "check2-circle",
+  color = "vb-green",
+  value = utp_completed_screenings
+)
+```
+
+```{r}
+#| echo: false
+#| title: Unique MRNs
+#| content: valuebox
+
+utp_patients <- dt_data %>% 
+  filter(
+  calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  select(ri_patient_mrn) %>% unique() %>% nrow()
+
+# Create value box  
+list(
+  icon = "person",
+  color = "vb-green",
+  value = utp_patients
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Screening Items Complete but EM Status Impression Incomplete
+#| content: valuebox
+
+utp_em_status_incomplete <- dt_data %>% filter(if_all(
+  .cols = all_of(ind_em_vars),
+  .fns = ~ !is.na(.x)
+)) %>% filter(is.na(suspect_em_2cat )) %>%   
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "clipboard2-x",
+  color = "vb-green",
+  value = utp_em_status_incomplete
+)
+```
+
+```{r}
+#| echo: false
+#| title: EM Suspected
+#| content: valuebox
+
+utp_suspect_em_count <- dt_data %>% filter(suspect_em_2cat_f == "Yes") %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "search",
+  color = "vb-green",
+  value = utp_suspect_em_count
+)
+```
+
+
+```{r}
+#| echo: false
+#| title: Intended Reports
+#| content: valuebox
+
+utp_ri_count <- reports_intended %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark",
+  color = "vb-green",
+  value = utp_ri_count
+)
+```
+
+## Row {height= "5%" .fill}
+
+```{r}
+#| echo: false
+#| title: Intended Reports Made
+#| content: valuebox
+
+utp_irm_count <- intended_reports_made %>%   
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  nrow()
+
+# Create value box  
+list(
+  icon = "file-earmark-check",
+  color = "vb-green",
+  value = utp_irm_count
+)
+```
+
+```{r}
+#| echo: false
+#| title: Texas Reporting Guidance Link Clicks
+#| content: valuebox
+
+tx_rg_link_clicks <- link_data %>% filter(link == "detect_tx") %>% 
+  filter(hits >= 1) %>% nrow()
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = tx_rg_link_clicks
+)
+```
+
+```{r}
+#| echo: false
+#| title: Abuse Types Link Clicks
+#| content: valuebox
+
+# Create value box  
+list(
+  icon = "link",
+  color = "vb-green",
+  value = def_link_clicks
+)
+```
+
+## Row {.flow}
+
+```{r, echo = FALSE}
+#| title: Missingness Summary
+missing_data_plot(utp_missing_plot_data)
+```
+
+## Row
+
+```{r, echo = FALSE}
+#| title: Textbox Data
+utp_text_box_table_data <- text_box_table_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") 
+
+text_box_dt(utp_text_box_table_data)
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r}
+#| title: Indicators of EM Module Summary
+
+utp_ind_em_plot_data <- ind_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls")
+
+ind_em_plot(utp_ind_em_plot_data, "inst_count", "inst_perc")
+```
+
+```{r, echo = FALSE}
+#| title: EM Type Summary
+
+utp_em_type_plot_data <- em_type_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls")
+
+em_type_plot(utp_em_type_plot_data, "inst_count", "inst_perc")
+```
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: Indicators of EM Module By Suspect EM
+
+utp_ind_sus_em_plot_data <- ind_sus_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls")
+
+ind_em_sus_em_plot(utp_ind_sus_em_plot_data, "inst_count", "inst_perc", 
+                "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+utp_ind_sus_em_table_data <- ind_sus_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  select(-c(calc_institution_7cat_f)) %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 4)
+
+ind_em_sus_em_dt(utp_ind_sus_em_table_data)
+```
+
+
+## Row
+
+### Column {.tabset}
+
+```{r, echo = FALSE}
+#| title: EM Types When EM is Suspected - Plot
+
+utp_sus_type_em_plot_data <- sus_type_em_plot_data %>%
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls")
+
+em_type_sus_em_plot(utp_sus_type_em_plot_data, "inst_count", "inst_perc_label")
+```
+
+```{r, echo = FALSE}
+#| title: Table
+
+utp_sus_type_em_table_data <- sus_type_em_table_data %>% 
+  filter(
+    calc_institution_7cat_f == "UTH Houston - UT Physicians House Calls") %>%
+  select(-c(calc_institution_7cat_f))  %>%
+  # Add column for creating shade pattern
+  add_shade_column_x_rows(., 3)
+
+em_type_sus_em_dt(utp_sus_type_em_table_data)
+```

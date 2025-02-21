@@ -16,6 +16,8 @@ library(purrr)
 library(stringr)
 library(janitor)
 library(here)
+library(readxl)
+library(lubridate)
 ```
 
 
@@ -41,8 +43,35 @@ tool_pilot_labels <- read_csv(
              "detect_tool_pilot_test_labels_raw.csv"))
 
 # Link data
-link_hits <- read_csv(here::here("data", "detect_tool_pilot",
-                                 "detect_tool_pilot_link_hits.csv"))
+definitions_link_hits <- readxl::read_xlsx(
+  here::here("data", "detect_tool_pilot", "link_data", 
+             "hits_for_elder_abuse_definitions.xlsx"), 
+  col_names = c("date", "elder_abuse_definitions"), skip = 1,
+  )
+
+al_link_hits <- readxl::read_xlsx(
+  here::here("data", "detect_tool_pilot", "link_data", 
+             "hits_for_detect_al.xlsx"), skip = 1,
+  col_names = c("date", "detect_al")
+  )
+
+ca_link_hits <- readxl::read_xlsx(
+  here::here("data", "detect_tool_pilot", "link_data", 
+             "hits_for_detect_ca.xlsx"), skip = 1,
+  col_names = c("date", "detect_ca")
+  )
+
+md_link_hits <- readxl::read_xlsx(
+  here::here("data", "detect_tool_pilot", "link_data", 
+             "hits_for_detect_md.xlsx"), skip = 1,
+  col_names = c("date", "detect_md")
+  )
+
+tx_link_hits <- readxl::read_xlsx(
+  here::here("data", "detect_tool_pilot", "link_data", 
+             "hits_for_detect_tx.xlsx"), skip = 1, 
+  col_names = c("date", "detect_tx")
+  )
 ```
 
 
@@ -75,7 +104,7 @@ labels <- c("Record ID", "Survey Identifier", "Survey Timestamp",
            "Other UTSW clinician name", "LBJ clinician name", 
            "Other LBJ clinician name", "UTP clinician name", 
            "Other UTP clinician name", "Clinician ID", "Clinician name", 
-           "Absence of necessities ", "Environment health or safety concern", 
+           "Absence of necessities", "Environment health or safety concern", 
            "Environment not assessed reason", "Defensive", 
            "Caregiver not assessed reason", "Other reason caregiver not assessed",
            "Chemically sedated", "Isolated", "Anxious", "Prohibited", "Unmet needs", 
@@ -499,11 +528,19 @@ var_desc <- bind_rows(var_desc, tool_pilot_vars) %>%
 ```
 
 
-# Convert link hits data into a longer format
+# Merge link data and convert to long format
 
 ```{r}
-link_hits <- link_hits %>% 
-  tidyr::pivot_longer(!date, names_to = "link", values_to = "hits")
+# Merge all the link data into one dataframe
+link_hits <- list(definitions_link_hits, al_link_hits, ca_link_hits, 
+                  md_link_hits, tx_link_hits) %>% purrr::reduce(left_join, 
+                                                                by = "date") %>%
+  # Convert data frame to long form
+  tidyr::pivot_longer(!date, names_to = "link", values_to = "hits") %>%
+  mutate(
+    date = lubridate::mdy(date)
+  )
+  
 ```
 
 
