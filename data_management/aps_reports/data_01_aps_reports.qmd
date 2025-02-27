@@ -17,6 +17,8 @@ library(purrr)
 library(stringr)
 library(janitor)
 library(here)
+library(redcapAPI)
+library(keyring)
 ```
 
 
@@ -31,13 +33,30 @@ source(here::here("R", "data_cleaning_tools.R"))
 
 # Load data
 
+An API token unique to each user and project can be requested on REDCap. This API token can be saved on your system using the keyring `key_set` function as follows:
+keyring::key_set("aps_reports_redcap_api"). A password box will pop-up and your unique token can be entered intothe text box. Once this is done once, it doesn't need to be repeated unless a new token is requested on REDCap. The code below can then be run.
+
+```{r}
+# Define REDCap API URL API token
+api_token <-  keyring::key_get("aps_reports_redcap_api") # Get saved REDCap API token
+redcap_url <- "https://redcap.uth.tmc.edu/api/"
+
+# Establish connection to the REDCap project
+rcon <- redcapConnection(url = redcap_url, token = api_token)
+
+# Export records with coded values
+aps  <- exportRecordsTyped(rcon, form = "aps_reporting",
+                                rawOrLabel = "raw", factor = FALSE) %>% 
+  clean_names()
+```
+
 ```{r, message=FALSE}
 # Raw data with numerically coded values
-aps <- read_csv(here::here("data", "aps_reports", "aps_report_data_raw.csv")) %>% 
+test <- read_csv(here::here("data", "aps_reports", "aps_report_data_raw.csv")) %>% 
   clean_names()
 
 # Data labels
-aps_lab <- read_csv(here::here("data", "aps_reports", 
+test_lab <- read_csv(here::here("data", "aps_reports", 
                                "aps_report_data_labels_raw.csv"))
 ```
 
@@ -47,23 +66,36 @@ aps_lab <- read_csv(here::here("data", "aps_reports",
 Extract the column names from the data and labels data frames to create a data frame of variable descriptions
 
 ```{r}
-var_desc <- data.frame(variable = names(aps),
-                       description = names(aps_lab)) %>%
+# Add missing variable labels for REDCap variables lost with API
+attributes(aps$redcap_survey_identifier)$label <- "Survey Identifier"
+attributes(aps$aps_reporting_timestamp)$label <- "Survey Timestamp"
+attributes(aps$aps_reporting_complete)$label <-" Complete?"
+
+# Create dataframe
+vars_labels <- sapply(aps,
+       function(x){attr(x,"label")})
+
+var_desc <- data.frame(variable = names(vars_labels), 
+                       description = unname(vars_labels), 
+                       row.names = NULL) %>%
   mutate(id = row_number())
 
 var_desc
 ```
 
 
-# Replace labels with variable names in the label data frame
+# Convert all factor variables to character variables
+
+Before the appropriate factor variables with the appropriate levels can be set, the ones automatically created need to be removed.
 
 ```{r}
-# Create a named vector with variable names and variable descriptions 
-naming_vec <- setNames(as.list(var_desc$description),
-                               var_desc$variable)
-
-# Rename the variables using the vector
-aps_rep <- aps_lab %>% rename(unlist(naming_vec))
+aps_rep <- aps %>%
+  mutate(
+    across(
+      .cols = where(is.factor),
+      .fns = ~ as.character(.x)
+    )
+  )
 ```
 
 # Convert the checkbox variables into binary forms
