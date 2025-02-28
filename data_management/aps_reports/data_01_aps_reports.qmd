@@ -34,7 +34,7 @@ source(here::here("R", "data_cleaning_tools.R"))
 # Load data
 
 An API token unique to each user and project can be requested on REDCap. This API token can be saved on your system using the keyring `key_set` function as follows:
-keyring::key_set("aps_reports_redcap_api"). A password box will pop-up and your unique token can be entered intothe text box. Once this is done once, it doesn't need to be repeated unless a new token is requested on REDCap. The code below can then be run.
+keyring::key_set("aps_reports_redcap_api"). A password box will pop-up and your unique token can be entered into the text box. Once this is done once, it doesn't need to be repeated unless a new token is requested on REDCap. The code below can then be run.
 
 ```{r}
 # Define REDCap API URL API token
@@ -48,16 +48,6 @@ rcon <- redcapConnection(url = redcap_url, token = api_token)
 aps  <- exportRecordsTyped(rcon, form = "aps_reporting",
                                 rawOrLabel = "raw", factor = FALSE) %>% 
   clean_names()
-```
-
-```{r, message=FALSE}
-# Raw data with numerically coded values
-test <- read_csv(here::here("data", "aps_reports", "aps_report_data_raw.csv")) %>% 
-  clean_names()
-
-# Data labels
-test_lab <- read_csv(here::here("data", "aps_reports", 
-                               "aps_report_data_labels_raw.csv"))
 ```
 
 
@@ -230,10 +220,6 @@ aps_rep <- aps_rep |>
   # Drop the original variable if the version with "cat" suffix has the exact
   # same values.
   drop_dup_orig(cols, cols_suffix)
-```
-
-```{r}
-names(aps)
 ```
 
 ### Clinicians
@@ -796,12 +782,19 @@ setdiff(var_desc$variable, names(aps_rep))
 var_desc <- var_desc %>% filter(variable %in% names(aps_rep))
 ```
 
+
 # Save data
 
 ```{r}
+# Create new aps_reports data folder
+folder_path <- here::here("data", "aps_reports")
+if(!dir.exists(folder_path)) {dir.create(folder_path)}
+
 write_rds(aps_rep, here::here("data", "aps_reports",
                                  "aps_reports_cleaned.RDS"))
+```
 
+```{r}
 write_rds(var_desc, here::here("data_management", "aps_reports", 
                                "variable_descriptions.RDS"))
 ```
