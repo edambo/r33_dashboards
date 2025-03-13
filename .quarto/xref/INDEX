@@ -85,5 +85,23 @@
   },
   "data_management/detect_tool_pilot/data_02_detect_tool_pilot_test.qmd": {
     "data_02_detect_tool_pilot_test.html": "3a740ca2"
+  },
+  "data_management/mock_data/01_mock_data_creation.qmd": {
+    "01_mock_data_creation.html": "99fed188"
+  },
+  "data_management/mock_data/02_clinician_tracker_data_analysis.qmd": {
+    "02_clinician_tracker_data_analysis.html": "3f772065"
+  },
+  "data_management/mock_data/03_recruiter_scheduling_data_calc.qmd": {
+    "03_recruiter_scheduling_data_calc.html": "f5c785f5"
+  },
+  "data_management/detect_tool/data_01_detect_tool.qmd": {
+    "data_01_detect_tool.html": "be5b7e5f"
+  },
+  "data_management/detect_tool/data_02_detect_tool.qmd": {
+    "data_02_detect_tool.html": "d1698b50"
+  },
+  "sections/detect_tool_dashboard.qmd": {
+    "detect_tool_dashboard.html": "045e5ace"
   }
 }

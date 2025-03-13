@@ -4,7 +4,7 @@ title: "Clean DETECT tool pilot study data imported from REDCap"
 
 # Overview
 
-In this file, we do some initial cleaning of the DETECT tool pilot study data imported from REDCap to prepare it for dashboard summary. This pilot lasted for 2 weeks, starting on 11/11/2024 and ending on 11/25/2023.
+In this file, we do some initial cleaning of the DETECT tool pilot study data imported from REDCap to prepare it for dashboard summary. This pilot lasted for 2 weeks, starting on 11/11/2024 and ending on 11/25/2024.
 
 
 # Load packages
