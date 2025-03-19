@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.549">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>DETECT R33 Dashboards - Create variables for visualizing the DETECT tool pilot study data</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../assets/custom_style.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../graphics/detect_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">DETECT R33 Dashboards</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Overview</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-dashboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Dashboards</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-dashboards">    
+        <li>
+    <a class="dropdown-item" href="../../sections/detect_tool_dashboard.html">
+ <span class="dropdown-text">DETECT Tool</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../sections/detect_tool_pilot_dashboard.html">
+ <span class="dropdown-text">DETECT Tool Pilot</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#load-packages" id="toc-load-packages" class="nav-link" data-scroll-target="#load-packages">Load packages</a></li>
+  <li><a href="#load-data-and-custom-functions" id="toc-load-data-and-custom-functions" class="nav-link" data-scroll-target="#load-data-and-custom-functions">Load data and custom functions</a></li>
+  <li><a href="#select-variables-useful-for-the-dashboard" id="toc-select-variables-useful-for-the-dashboard" class="nav-link" data-scroll-target="#select-variables-useful-for-the-dashboard">Select variables useful for the dashboard</a></li>
+  <li><a href="#missingness-data" id="toc-missingness-data" class="nav-link" data-scroll-target="#missingness-data">Missingness data</a>
+  <ul class="collapse">
+  <li><a href="#create-fuction-to-generate-missingness-variables" id="toc-create-fuction-to-generate-missingness-variables" class="nav-link" data-scroll-target="#create-fuction-to-generate-missingness-variables">Create fuction to generate missingness variables</a></li>
+  <li><a href="#variables-with-no-conditional-arguments-skip-logic" id="toc-variables-with-no-conditional-arguments-skip-logic" class="nav-link" data-scroll-target="#variables-with-no-conditional-arguments-skip-logic">Variables with no conditional arguments/ skip logic</a></li>
+  <li><a href="#variables-with-conditional-arguments-skip-logic" id="toc-variables-with-conditional-arguments-skip-logic" class="nav-link" data-scroll-target="#variables-with-conditional-arguments-skip-logic">Variables with conditional arguments/ skip logic</a>
+  <ul class="collapse">
+  <li><a href="#ri_environment_un_reason" id="toc-ri_environment_un_reason" class="nav-link" data-scroll-target="#ri_environment_un_reason">ri_environment_un_reason</a></li>
+  <li><a href="#ri_caregiver_un_reason" id="toc-ri_caregiver_un_reason" class="nav-link" data-scroll-target="#ri_caregiver_un_reason">ri_caregiver_un_reason</a></li>
+  <li><a href="#ri_caregiver_oth" id="toc-ri_caregiver_oth" class="nav-link" data-scroll-target="#ri_caregiver_oth">ri_caregiver_oth</a></li>
+  <li><a href="#ri_patient_assess" id="toc-ri_patient_assess" class="nav-link" data-scroll-target="#ri_patient_assess">ri_patient_assess</a></li>
+  <li><a href="#ri_em_no_reason" id="toc-ri_em_no_reason" class="nav-link" data-scroll-target="#ri_em_no_reason">ri_em_no_reason</a></li>
+  <li><a href="#ri_em_reason" id="toc-ri_em_reason" class="nav-link" data-scroll-target="#ri_em_reason">ri_em_reason</a></li>
+  <li><a href="#em-type-vars" id="toc-em-type-vars" class="nav-link" data-scroll-target="#em-type-vars">EM Type vars</a></li>
+  <li><a href="#ri_em_type_other" id="toc-ri_em_type_other" class="nav-link" data-scroll-target="#ri_em_type_other">ri_em_type_other</a></li>
+  <li><a href="#ri_report_2cat_f" id="toc-ri_report_2cat_f" class="nav-link" data-scroll-target="#ri_report_2cat_f">ri_report_2cat_f</a></li>
+  <li><a href="#ri_aps_no_reason" id="toc-ri_aps_no_reason" class="nav-link" data-scroll-target="#ri_aps_no_reason">ri_aps_no_reason</a></li>
+  <li><a href="#ri_refer_svcs_2cat_f" id="toc-ri_refer_svcs_2cat_f" class="nav-link" data-scroll-target="#ri_refer_svcs_2cat_f">ri_refer_svcs_2cat_f</a></li>
+  <li><a href="#ri_refer_svcs_specify" id="toc-ri_refer_svcs_specify" class="nav-link" data-scroll-target="#ri_refer_svcs_specify">ri_refer_svcs_specify</a></li>
+  <li><a href="#ri_reflection_notes" id="toc-ri_reflection_notes" class="nav-link" data-scroll-target="#ri_reflection_notes">ri_reflection_notes</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#prepare-missingness-data-for-visualization" id="toc-prepare-missingness-data-for-visualization" class="nav-link" data-scroll-target="#prepare-missingness-data-for-visualization">Prepare Missingness data for visualization</a>
+  <ul class="collapse">
+  <li><a href="#all" id="toc-all" class="nav-link" data-scroll-target="#all">All</a></li>
+  <li><a href="#baylor" id="toc-baylor" class="nav-link" data-scroll-target="#baylor">Baylor</a></li>
+  <li><a href="#johns-hopkins" id="toc-johns-hopkins" class="nav-link" data-scroll-target="#johns-hopkins">Johns Hopkins</a></li>
+  <li><a href="#ucsf" id="toc-ucsf" class="nav-link" data-scroll-target="#ucsf">UCSF</a></li>
+  <li><a href="#uab" id="toc-uab" class="nav-link" data-scroll-target="#uab">UAB</a></li>
+  <li><a href="#utsw" id="toc-utsw" class="nav-link" data-scroll-target="#utsw">UTSW</a></li>
+  <li><a href="#lbj" id="toc-lbj" class="nav-link" data-scroll-target="#lbj">LBJ</a></li>
+  <li><a href="#utp" id="toc-utp" class="nav-link" data-scroll-target="#utp">UTP</a></li>
+  </ul></li>
+  <li><a href="#text-box-table-data" id="toc-text-box-table-data" class="nav-link" data-scroll-target="#text-box-table-data">Text box table data</a></li>
+  <li><a href="#univariate-visuals-data" id="toc-univariate-visuals-data" class="nav-link" data-scroll-target="#univariate-visuals-data">Univariate visuals data</a>
+  <ul class="collapse">
+  <li><a href="#indicators-of-abuse" id="toc-indicators-of-abuse" class="nav-link" data-scroll-target="#indicators-of-abuse">Indicators of abuse</a></li>
+  <li><a href="#em-type" id="toc-em-type" class="nav-link" data-scroll-target="#em-type">EM Type</a>
+  <ul class="collapse">
+  <li><a href="#counts-for-aps-reports-intended-and-made" id="toc-counts-for-aps-reports-intended-and-made" class="nav-link" data-scroll-target="#counts-for-aps-reports-intended-and-made">Counts for APS reports intended and made</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#bivariate-visuals-data" id="toc-bivariate-visuals-data" class="nav-link" data-scroll-target="#bivariate-visuals-data">Bivariate visuals data</a>
+  <ul class="collapse">
+  <li><a href="#indicators-of-em-module-and-suspect-em" id="toc-indicators-of-em-module-and-suspect-em" class="nav-link" data-scroll-target="#indicators-of-em-module-and-suspect-em">Indicators of EM Module and Suspect EM</a></li>
+  <li><a href="#suspect-em-and-em-type" id="toc-suspect-em-and-em-type" class="nav-link" data-scroll-target="#suspect-em-and-em-type">Suspect EM and EM Type</a></li>
+  </ul></li>
+  <li><a href="#save-data" id="toc-save-data" class="nav-link" data-scroll-target="#save-data">Save data</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content column-page-left" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Create variables for visualizing the DETECT tool pilot study data</h1>
+</div>
+
+
+
+<div class="quarto-title-meta column-page-left">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="overview" class="level1">
+<h1>Overview</h1>
+<p>In this file, we create some new variables that summarize the completion and missingness counts for various variables in the DETECT tool pilot study data. These new variables will used in creating interactive plots using the plotly package.</p>
+</section>
+<section id="load-packages" class="level1">
+<h1>Load packages</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr, <span class="at">warn.conflicts =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'dplyr' was built under R version 4.3.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'readr' was built under R version 4.3.2</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'here' was built under R version 4.3.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(crosstalk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'crosstalk' was built under R version 4.3.2</code></pre>
+</div>
+</div>
+</section>
+<section id="load-data-and-custom-functions" class="level1">
+<h1>Load data and custom functions</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>dt_data_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"detect_tool_cleaned.RDS"</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>dt_data <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(dt_data_path)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>var_desc <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data_management"</span>, <span class="st">"detect_tool"</span>, </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"variable_descriptions.RDS"</span>))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>aps_reports_data <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"aps_reports"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                    <span class="st">"aps_reports_cleaned.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"r"</span>, <span class="st">"add_shade_column_x_rows.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="select-variables-useful-for-the-dashboard" class="level1">
+<h1>Select variables useful for the dashboard</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>dash_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"record_id"</span>, <span class="st">"reporting_instrument_complete"</span>, <span class="st">"ri_timestamp_start"</span>,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">"timestamp_end"</span>, <span class="st">"ri_patient_mrn"</span>, <span class="st">"calc_institution_7cat_f"</span>, </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_clinician_id"</span>, <span class="st">"ri_clinician_id_name"</span>, <span class="st">"ri_necessities_3cat_f"</span>, </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_environment_3cat_f"</span>, <span class="st">"ri_environment_un_reason"</span>, </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_caregiver_3cat_f"</span>, <span class="st">"ri_caregiver_un_reason_2cat_f"</span>, </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_caregiver_oth"</span>, <span class="st">"ri_sedated_3cat_f"</span>, <span class="st">"ri_isolated_3cat_f"</span>, </span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_anxious_3cat_f"</span>, <span class="st">"ri_prohibited_3cat_f"</span>, </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_unmet_needs_3cat_f"</span>, <span class="st">"ri_injuries_3cat_f"</span>, </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_patient_assess"</span>, <span class="st">"suspect_em_2cat_f"</span>, <span class="st">"ri_em_no_reason"</span>, </span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_reason"</span>, <span class="st">"ri_em_type_1_2cat_f"</span>, <span class="st">"ri_em_type_2_2cat_f"</span>, </span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_type_3_2cat_f"</span>, <span class="st">"ri_em_type_4_2cat_f"</span>, <span class="st">"ri_em_type_5_2cat_f"</span>, </span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_type_6_2cat_f"</span>, <span class="st">"ri_em_type_7_2cat_f"</span>, <span class="st">"ri_em_type_98_2cat_f"</span>, </span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_type_99_2cat_f"</span>, <span class="st">"ri_em_type_other"</span>, <span class="st">"ri_report_2cat_f"</span>, </span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_aps_no_reason"</span>, <span class="st">"ri_refer_svcs_2cat_f"</span>, </span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_refer_svcs_specify"</span>, <span class="st">"ri_reflection_2cat_f"</span>, </span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_reflection_notes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ind_em_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_necessities_3cat_f"</span>, <span class="st">"ri_environment_3cat_f"</span>, </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"ri_caregiver_3cat_f"</span>, <span class="st">"ri_sedated_3cat_f"</span>, </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"ri_isolated_3cat_f"</span>, <span class="st">"ri_anxious_3cat_f"</span>, </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"ri_prohibited_3cat_f"</span>, <span class="st">"ri_unmet_needs_3cat_f"</span>, </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"ri_injuries_3cat_f"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="missingness-data" class="level1">
+<h1>Missingness data</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> dt_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">all_of</span>(dash_vars))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="create-fuction-to-generate-missingness-variables" class="level2">
+<h2 class="anchored" data-anchor-id="create-fuction-to-generate-missingness-variables">Create fuction to generate missingness variables</h2>
+<p>This function will also take branching/ skip logic into consideration.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>dt_miss <span class="ot">&lt;-</span> <span class="cf">function</span>(df, var, <span class="at">condition =</span> <span class="cn">NULL</span>){</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">is.null</span>(condition)){</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    new_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"{var}_miss"</span> <span class="sc">:</span><span class="er">=</span> <span class="fu">case_when</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>          <span class="fu">is.na</span>(.data[[var]]) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>          <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  }<span class="cf">else</span> <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(condition)){</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    new_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>         <span class="st">"{var}_miss"</span> <span class="sc">:</span><span class="er">=</span> <span class="fu">case_when</span>(</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>           <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> condition)) <span class="sc">&amp;</span> <span class="fu">is.na</span>(.data[[var]]) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>           <span class="sc">!</span>(<span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> condition))) <span class="sc">&amp;</span> <span class="fu">is.na</span>(.data[[var]]) <span class="sc">~</span> <span class="cn">NA</span>,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>           <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> condition)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(.data[[var]]) <span class="sc">~</span> <span class="dv">0</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        )       </span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  new_df <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(<span class="fu">paste0</span>(var, <span class="st">"_miss"</span>), <span class="at">.after =</span> var)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="variables-with-no-conditional-arguments-skip-logic" class="level2">
+<h2 class="anchored" data-anchor-id="variables-with-no-conditional-arguments-skip-logic">Variables with no conditional arguments/ skip logic</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_patient_mrn"</span>, <span class="st">"calc_institution_7cat_f"</span>, <span class="st">"ri_clinician_id_name"</span>, </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_necessities_3cat_f"</span>, <span class="st">"ri_environment_3cat_f"</span>, </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_caregiver_3cat_f"</span>, <span class="st">"ri_sedated_3cat_f"</span>, <span class="st">"ri_isolated_3cat_f"</span>, </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_anxious_3cat_f"</span>, <span class="st">"ri_prohibited_3cat_f"</span>, <span class="st">"ri_unmet_needs_3cat_f"</span>, </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_injuries_3cat_f"</span>, <span class="st">"suspect_em_2cat_f"</span>, <span class="st">"ri_reflection_2cat_f"</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>          )</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="cn">NULL</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(var <span class="cf">in</span> vars){</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">condition =</span> condition)  </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
+ℹ Please use `all_of()` or `any_of()` instead.
+  # Was:
+  data %&gt;% select(var)
+
+  # Now:
+  data %&gt;% select(all_of(var))
+
+See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.</code></pre>
+</div>
+</div>
+</section>
+<section id="variables-with-conditional-arguments-skip-logic" class="level2">
+<h2 class="anchored" data-anchor-id="variables-with-conditional-arguments-skip-logic">Variables with conditional arguments/ skip logic</h2>
+<section id="ri_environment_un_reason" class="level3">
+<h3 class="anchored" data-anchor-id="ri_environment_un_reason">ri_environment_un_reason</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_environment_un_reason"</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>condition_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_necessities_3cat_f"</span>, <span class="st">"ri_environment_3cat_f"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to assess')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_caregiver_un_reason" class="level3">
+<h3 class="anchored" data-anchor-id="ri_caregiver_un_reason">ri_caregiver_un_reason</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_caregiver_un_reason_2cat_f"</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"ri_caregiver_3cat_f == 'Unable to assess'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_caregiver_oth" class="level3">
+<h3 class="anchored" data-anchor-id="ri_caregiver_oth">ri_caregiver_oth</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_caregiver_oth"</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"ri_caregiver_un_reason_2cat_f == 'Other reason'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_patient_assess" class="level3">
+<h3 class="anchored" data-anchor-id="ri_patient_assess">ri_patient_assess</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_patient_assess"</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>condition_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_sedated_3cat_f"</span>, <span class="st">"ri_isolated_3cat_f"</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_anxious_3cat_f"</span>, <span class="st">"ri_prohibited_3cat_f"</span>, </span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_unmet_needs_3cat_f"</span>, <span class="st">"ri_injuries_3cat_f"</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"if_any(.cols = all_of(condition_vars), .fns = ~.x == 'Unable to assess')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_em_no_reason" class="level3">
+<h3 class="anchored" data-anchor-id="ri_em_no_reason">ri_em_no_reason</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_em_no_reason"</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>condition_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_necessities_3cat_f"</span>, <span class="st">"ri_environment_3cat_f"</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_caregiver_3cat_f"</span>, <span class="st">"ri_sedated_3cat_f"</span>, </span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_isolated_3cat_f"</span>, <span class="st">"ri_anxious_3cat_f"</span>, </span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_prohibited_3cat_f"</span>, <span class="st">"ri_unmet_needs_3cat_f"</span>, </span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_injuries_3cat_f"</span>)</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"suspect_em_2cat_f == 'No' &amp; if_any(.cols = all_of(condition_vars), </span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="st">.fns = ~.x == 'Yes')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_em_reason" class="level3">
+<h3 class="anchored" data-anchor-id="ri_em_reason">ri_em_reason</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_em_reason"</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>condition_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_necessities_3cat_f"</span>, <span class="st">"ri_environment_3cat_f"</span>,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_caregiver_3cat_f"</span>, <span class="st">"ri_sedated_3cat_f"</span>, </span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_isolated_3cat_f"</span>, <span class="st">"ri_anxious_3cat_f"</span>, </span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_prohibited_3cat_f"</span>, <span class="st">"ri_unmet_needs_3cat_f"</span>, </span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_injuries_3cat_f"</span>)</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"suspect_em_2cat_f == 'Yes' &amp; if_all(.cols = all_of(condition_vars), </span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="st">.fns = ~.x != 'Yes')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="em-type-vars" class="level3">
+<h3 class="anchored" data-anchor-id="em-type-vars">EM Type vars</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>em_type_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_em_type_1_2cat_f"</span>, <span class="st">"ri_em_type_2_2cat_f"</span>, <span class="st">"ri_em_type_3_2cat_f"</span>, </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_em_type_4_2cat_f"</span>, <span class="st">"ri_em_type_5_2cat_f"</span>, <span class="st">"ri_em_type_6_2cat_f"</span>, </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_em_type_7_2cat_f"</span>, <span class="st">"ri_em_type_98_2cat_f"</span>, <span class="st">"ri_em_type_99_2cat_f"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> missing_data <span class="sc">%&gt;%</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">ri_em_type_miss =</span> <span class="fu">case_when</span>(</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>      suspect_em_2cat_f <span class="sc">==</span> <span class="st">'Yes'</span> <span class="sc">&amp;</span> </span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">if_all</span>(<span class="at">.cols =</span> <span class="fu">all_of</span>(em_type_vars), </span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">.fns =</span> <span class="sc">~</span>.x <span class="sc">==</span> <span class="st">"No"</span>) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>      suspect_em_2cat_f <span class="sc">!=</span> <span class="st">'Yes'</span> <span class="sc">&amp;</span> </span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">if_all</span>(<span class="at">.cols =</span> <span class="fu">all_of</span>(em_type_vars), </span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>               <span class="at">.fns =</span> <span class="sc">~</span>.x <span class="sc">==</span> <span class="st">"No"</span>) <span class="sc">~</span> <span class="cn">NA</span>,</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>      suspect_em_2cat_f <span class="sc">==</span> <span class="st">'Yes'</span> <span class="sc">&amp;</span> </span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">if_any</span>(<span class="at">.cols =</span> <span class="fu">all_of</span>(em_type_vars), </span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>               <span class="at">.fns =</span> <span class="sc">~</span>.x <span class="sc">==</span> <span class="st">"Yes"</span>) <span class="sc">~</span> <span class="dv">0</span>      </span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_em_type_other" class="level3">
+<h3 class="anchored" data-anchor-id="ri_em_type_other">ri_em_type_other</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_em_type_other"</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"ri_em_type_98_2cat_f == 'Checked'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_report_2cat_f" class="level3">
+<h3 class="anchored" data-anchor-id="ri_report_2cat_f">ri_report_2cat_f</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_report_2cat_f"</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"suspect_em_2cat_f == 'Yes'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_aps_no_reason" class="level3">
+<h3 class="anchored" data-anchor-id="ri_aps_no_reason">ri_aps_no_reason</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_aps_no_reason"</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"ri_report_2cat_f == 'No'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_refer_svcs_2cat_f" class="level3">
+<h3 class="anchored" data-anchor-id="ri_refer_svcs_2cat_f">ri_refer_svcs_2cat_f</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_refer_svcs_2cat_f"</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"suspect_em_2cat_f == 'Yes'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_refer_svcs_specify" class="level3">
+<h3 class="anchored" data-anchor-id="ri_refer_svcs_specify">ri_refer_svcs_specify</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_refer_svcs_specify"</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"ri_refer_svcs_2cat_f == 'Yes'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ri_reflection_notes" class="level3">
+<h3 class="anchored" data-anchor-id="ri_reflection_notes">ri_reflection_notes</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="st">"ri_reflection_notes"</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>condition <span class="ot">&lt;-</span> <span class="st">"ri_reflection_2cat_f == 'Yes'"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">dt_miss</span>(<span class="at">df =</span> missing_data, <span class="at">var =</span> var, </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">condition =</span> condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="prepare-missingness-data-for-visualization" class="level1">
+<h1>Prepare Missingness data for visualization</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>label_order <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Brief note"</span>, <span class="st">"Have helpful details"</span>, <span class="st">"Specify other service"</span>, </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Other service referral"</span>, <span class="st">"No intention to report to APS reason"</span>, </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Intend to report to APS"</span>, <span class="st">"Specific other mistreatment type suspected"</span>, </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"EM type"</span>, <span class="st">"Suspect EM reason"</span>, </span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Indicators observed but EM not suspected reason"</span>, </span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Suspect EM"</span>, <span class="st">"Patient not assessed reason"</span>, </span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Unexplained injuries"</span>, <span class="st">"Unmet needs"</span>, <span class="st">"Prohibited"</span>, <span class="st">"Anxious"</span>, <span class="st">"Isolated"</span>, </span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Chemically sedated"</span>, <span class="st">"Other reason caregiver not assessed"</span>, </span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Caregiver not assessed reason"</span>, <span class="st">"Defensive"</span>, </span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Environment not assessed reason"</span>, <span class="st">"Environment health or safety concern"</span>, </span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Absence of necessities "</span>, <span class="st">"Clinician name"</span>, <span class="st">"Institution"</span>, <span class="st">"Patient MRN"</span></span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Function for creating missing plot data for all and each institution</span></span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>create_missing_plot_data <span class="ot">&lt;-</span> <span class="cf">function</span>(data){</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">%&gt;%</span> </span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Select only the record id and the missing data variables</span></span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(record_id, <span class="fu">ends_with</span>(<span class="st">"_miss"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove "_miss" suffix</span></span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename_with</span>(<span class="sc">~</span><span class="fu">gsub</span>(<span class="st">"_miss"</span>, <span class="st">""</span>, .x)) <span class="sc">%&gt;%</span></span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>    tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">!</span>record_id, <span class="at">names_to =</span> <span class="st">"var"</span>, <span class="at">values_to =</span> <span class="st">"missingness"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Recode missingness</span></span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">missingness_3cat_f =</span> <span class="fu">case_when</span>(</span>
+<span id="cb44-27"><a href="#cb44-27" aria-hidden="true" tabindex="-1"></a>        missingness <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Missing"</span>,</span>
+<span id="cb44-28"><a href="#cb44-28" aria-hidden="true" tabindex="-1"></a>        missingness <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"Not missing"</span>,</span>
+<span id="cb44-29"><a href="#cb44-29" aria-hidden="true" tabindex="-1"></a>        <span class="fu">is.na</span>(missingness) <span class="sc">~</span> <span class="st">"Not applicable"</span></span>
+<span id="cb44-30"><a href="#cb44-30" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb44-31"><a href="#cb44-31" aria-hidden="true" tabindex="-1"></a>      <span class="at">missingness_3cat_f =</span> <span class="fu">factor</span>(missingness_3cat_f, </span>
+<span id="cb44-32"><a href="#cb44-32" aria-hidden="true" tabindex="-1"></a>                       <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Missing"</span>, <span class="st">"Not missing"</span>, <span class="st">"Not applicable"</span>),</span>
+<span id="cb44-33"><a href="#cb44-33" aria-hidden="true" tabindex="-1"></a>                       <span class="at">exclude =</span> <span class="cn">NULL</span></span>
+<span id="cb44-34"><a href="#cb44-34" aria-hidden="true" tabindex="-1"></a>                       )</span>
+<span id="cb44-35"><a href="#cb44-35" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb44-36"><a href="#cb44-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create count column</span></span>
+<span id="cb44-37"><a href="#cb44-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(var, missingness_3cat_f) <span class="sc">%&gt;%</span></span>
+<span id="cb44-38"><a href="#cb44-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb44-39"><a href="#cb44-39" aria-hidden="true" tabindex="-1"></a>      <span class="at">count =</span> <span class="fu">n</span>()</span>
+<span id="cb44-40"><a href="#cb44-40" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb44-41"><a href="#cb44-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(record_id)) <span class="sc">%&gt;%</span></span>
+<span id="cb44-42"><a href="#cb44-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">distinct</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb44-43"><a href="#cb44-43" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add labels</span></span>
+<span id="cb44-44"><a href="#cb44-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"var"</span> <span class="ot">=</span> <span class="st">"variable"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb44-45"><a href="#cb44-45" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create label for aggregate variable "ri_em_type"</span></span>
+<span id="cb44-46"><a href="#cb44-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb44-47"><a href="#cb44-47" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> <span class="fu">case_when</span>(</span>
+<span id="cb44-48"><a href="#cb44-48" aria-hidden="true" tabindex="-1"></a>        var <span class="sc">==</span> <span class="st">"ri_em_type"</span> <span class="sc">~</span> <span class="st">"EM type"</span>,</span>
+<span id="cb44-49"><a href="#cb44-49" aria-hidden="true" tabindex="-1"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> label</span>
+<span id="cb44-50"><a href="#cb44-50" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb44-51"><a href="#cb44-51" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-52"><a href="#cb44-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb44-53"><a href="#cb44-53" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Ensure the correct order of labels is maintained in the plot</span></span>
+<span id="cb44-54"><a href="#cb44-54" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> label_order)</span>
+<span id="cb44-55"><a href="#cb44-55" aria-hidden="true" tabindex="-1"></a>    )  </span>
+<span id="cb44-56"><a href="#cb44-56" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="all" class="level2">
+<h2 class="anchored" data-anchor-id="all">All</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>missing_plot_data <span class="ot">&lt;-</span> <span class="fu">create_missing_plot_data</span>(missing_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="baylor" class="level2">
+<h2 class="anchored" data-anchor-id="baylor">Baylor</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>baylor_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"Baylor College of Medicine - BT House Calls"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="johns-hopkins" class="level2">
+<h2 class="anchored" data-anchor-id="johns-hopkins">Johns Hopkins</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>jh_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"Johns Hopkins - JHOME"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ucsf" class="level2">
+<h2 class="anchored" data-anchor-id="ucsf">UCSF</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>ucsf_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"UCSF - Care at Home Program"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="uab" class="level2">
+<h2 class="anchored" data-anchor-id="uab">UAB</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>uab_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"University of Alabama - UAB House Calls"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="utsw" class="level2">
+<h2 class="anchored" data-anchor-id="utsw">UTSW</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>utsw_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"UT Southwestern - COVE"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="lbj" class="level2">
+<h2 class="anchored" data-anchor-id="lbj">LBJ</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>lbj_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"UTH Houston - LBJ House Calls"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="utp" class="level2">
+<h2 class="anchored" data-anchor-id="utp">UTP</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>utp_missing_plot_data <span class="ot">&lt;-</span>  missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_institution_7cat_f <span class="sc">==</span> <span class="st">"UTH Houston - UT Physicians House Calls"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">create_missing_plot_data</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="text-box-table-data" class="level1">
+<h1>Text box table data</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>text_box_items <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_environment_un_reason"</span>, <span class="st">"ri_caregiver_oth"</span>,</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_patient_assess"</span>, <span class="st">"ri_em_no_reason"</span>, <span class="st">"ri_em_reason"</span>, </span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_em_type_other"</span>, <span class="st">"ri_aps_no_reason"</span>, </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"ri_refer_svcs_specify"</span>, <span class="st">"ri_reflection_notes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>text_box_table_data <span class="ot">&lt;-</span> missing_data <span class="sc">%&gt;%</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(record_id, timestamp_end, calc_institution_7cat_f, </span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>         <span class="fu">all_of</span>(text_box_items)) <span class="sc">%&gt;%</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">all_of</span>(text_box_items), </span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">"var"</span>, <span class="at">values_to =</span> <span class="st">"content"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(content)) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add labels</span></span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"var"</span> <span class="ot">=</span> <span class="st">"variable"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(description, var)) <span class="sc">%&gt;%</span></span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(label, <span class="at">.after =</span> calc_institution_7cat_f) <span class="sc">%&gt;%</span> <span class="fu">distinct</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Convert date-time variable to date variable</span></span>
+<span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as.Date</span>(timestamp_end),</span>
+<span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Make the record id and label columns factors to aid filtering</span></span>
+<span id="cb54-15"><a href="#cb54-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
+<span id="cb54-16"><a href="#cb54-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">.cols =</span> <span class="fu">c</span>(record_id, label),</span>
+<span id="cb54-17"><a href="#cb54-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> <span class="sc">~</span><span class="fu">factor</span>(.x)</span>
+<span id="cb54-18"><a href="#cb54-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb54-19"><a href="#cb54-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(timestamp_end)) <span class="sc">%&gt;%</span></span>
+<span id="cb54-20"><a href="#cb54-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(date, <span class="at">.after =</span> record_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="univariate-visuals-data" class="level1">
+<h1>Univariate visuals data</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>plot_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"record_id"</span>, <span class="st">"calc_institution_7cat_f"</span>, <span class="st">"ri_necessities_3cat_f"</span>, </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_environment_3cat_f"</span>, <span class="st">"ri_environment_un_reason"</span>, </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_caregiver_3cat_f"</span>, <span class="st">"ri_caregiver_un_reason_2cat_f"</span>, </span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_caregiver_oth"</span>, <span class="st">"ri_sedated_3cat_f"</span>, <span class="st">"ri_isolated_3cat_f"</span>, </span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_anxious_3cat_f"</span>, <span class="st">"ri_prohibited_3cat_f"</span>, </span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_unmet_needs_3cat_f"</span>, <span class="st">"ri_injuries_3cat_f"</span>, </span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_patient_assess"</span>, <span class="st">"suspect_em_2cat_f"</span>, <span class="st">"ri_em_no_reason"</span>, </span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_reason"</span>, <span class="st">"ri_em_type_1_2cat_f"</span>, <span class="st">"ri_em_type_2_2cat_f"</span>, </span>
+<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_type_3_2cat_f"</span>, <span class="st">"ri_em_type_4_2cat_f"</span>, <span class="st">"ri_em_type_5_2cat_f"</span>, </span>
+<span id="cb55-10"><a href="#cb55-10" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_type_6_2cat_f"</span>, <span class="st">"ri_em_type_7_2cat_f"</span>, <span class="st">"ri_em_type_98_2cat_f"</span>, </span>
+<span id="cb55-11"><a href="#cb55-11" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_em_type_99_2cat_f"</span>, <span class="st">"ri_em_type_other"</span>, <span class="st">"ri_report_2cat_f"</span>, </span>
+<span id="cb55-12"><a href="#cb55-12" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_aps_no_reason"</span>, <span class="st">"ri_refer_svcs_2cat_f"</span>, </span>
+<span id="cb55-13"><a href="#cb55-13" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_refer_svcs_specify"</span>, <span class="st">"ri_reflection_2cat_f"</span>, </span>
+<span id="cb55-14"><a href="#cb55-14" aria-hidden="true" tabindex="-1"></a>               <span class="st">"ri_reflection_notes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> dt_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">all_of</span>(plot_vars)) <span class="sc">%&gt;%</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span><span class="fu">c</span>(record_id, calc_institution_7cat_f, suspect_em_2cat_f), </span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">"var"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add labels</span></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"var"</span> <span class="ot">=</span> <span class="st">"variable"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>univar_plot_data <span class="ot">&lt;-</span> <span class="cf">function</span>(vars, level_list, labels_list){</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(var <span class="sc">%in%</span> vars) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(suspect_em_2cat_f)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Convert NA into a character value</span></span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> <span class="fu">case_when</span>(<span class="fu">is.na</span>(value) <span class="sc">~</span> <span class="st">"NA"</span>,</span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>                        <span class="cn">TRUE</span> <span class="sc">~</span> value),</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> <span class="fu">factor</span>(value, </span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">levels =</span> <span class="fu">c</span>(level_list, <span class="st">"NA"</span>),</span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>                     <span class="at">exclude =</span> <span class="cn">NULL</span></span>
+<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>                     ),</span>
+<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Ensure the order of labels in dataframe is maintained in the plot</span></span>
+<span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> <span class="fu">rev</span>(<span class="fu">unique</span>(labels_list)))</span>
+<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create proportions</span></span>
+<span id="cb57-15"><a href="#cb57-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">reframe</span>(</span>
+<span id="cb57-16"><a href="#cb57-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">inst_count =</span> <span class="fu">n</span>(), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, label, value)</span>
+<span id="cb57-17"><a href="#cb57-17" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-18"><a href="#cb57-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Include counts for factor levels that have zero counts</span></span>
+<span id="cb57-19"><a href="#cb57-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(calc_institution_7cat_f, label) <span class="sc">%&gt;%</span></span>
+<span id="cb57-20"><a href="#cb57-20" aria-hidden="true" tabindex="-1"></a>    tidyr<span class="sc">::</span><span class="fu">complete</span>(value) <span class="sc">%&gt;%</span></span>
+<span id="cb57-21"><a href="#cb57-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb57-22"><a href="#cb57-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb57-23"><a href="#cb57-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_count =</span> tidyr<span class="sc">::</span><span class="fu">replace_na</span>(inst_count, <span class="dv">0</span>)</span>
+<span id="cb57-24"><a href="#cb57-24" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb57-25"><a href="#cb57-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calulate totals and proportions for each institution</span></span>
+<span id="cb57-26"><a href="#cb57-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb57-27"><a href="#cb57-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_total =</span> <span class="fu">sum</span>(inst_count), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, label),</span>
+<span id="cb57-28"><a href="#cb57-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_perc =</span> <span class="fu">paste0</span>(<span class="fu">format</span>(<span class="fu">round</span>((inst_count<span class="sc">/</span>inst_total) <span class="sc">*</span><span class="dv">100</span>, <span class="dv">1</span>),</span>
+<span id="cb57-29"><a href="#cb57-29" aria-hidden="true" tabindex="-1"></a>                                <span class="at">nsmall =</span> <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb57-30"><a href="#cb57-30" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb57-31"><a href="#cb57-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate totals and proportions for all</span></span>
+<span id="cb57-32"><a href="#cb57-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb57-33"><a href="#cb57-33" aria-hidden="true" tabindex="-1"></a>      <span class="at">count =</span> <span class="fu">sum</span>(inst_count), <span class="at">.by =</span> <span class="fu">c</span>(label, value)</span>
+<span id="cb57-34"><a href="#cb57-34" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb57-35"><a href="#cb57-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb57-36"><a href="#cb57-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, label),</span>
+<span id="cb57-37"><a href="#cb57-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">perc =</span> <span class="fu">paste0</span>(<span class="fu">format</span>(<span class="fu">round</span>((count<span class="sc">/</span>total) <span class="sc">*</span><span class="dv">100</span>, <span class="dv">1</span>), <span class="at">nsmall =</span> <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb57-38"><a href="#cb57-38" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb57-39"><a href="#cb57-39" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>univar_plot_data <span class="ot">&lt;-</span> <span class="cf">function</span>(vars, level_list, labels_list){</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(var <span class="sc">%in%</span> vars) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(suspect_em_2cat_f)) <span class="sc">%&gt;%</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Convert NA into a character value</span></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> <span class="fu">case_when</span>(<span class="fu">is.na</span>(value) <span class="sc">~</span> <span class="st">"NA"</span>,</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>                        <span class="cn">TRUE</span> <span class="sc">~</span> value),</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> <span class="fu">factor</span>(value,</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">levels =</span> <span class="fu">c</span>(level_list, <span class="st">"NA"</span>),</span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>                     <span class="at">exclude =</span> <span class="cn">NULL</span></span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>                     ),</span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Ensure the order of labels in data frame is maintained in the plot</span></span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> <span class="fu">rev</span>(<span class="fu">unique</span>(labels_list)))</span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create proportions</span></span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">reframe</span>(</span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">inst_count =</span> <span class="fu">n</span>(), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, label, value)</span>
+<span id="cb58-17"><a href="#cb58-17" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb58-18"><a href="#cb58-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Include counts for factor levels that have zero counts</span></span>
+<span id="cb58-19"><a href="#cb58-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(calc_institution_7cat_f, label) <span class="sc">%&gt;%</span></span>
+<span id="cb58-20"><a href="#cb58-20" aria-hidden="true" tabindex="-1"></a>    tidyr<span class="sc">::</span><span class="fu">complete</span>(value) <span class="sc">%&gt;%</span></span>
+<span id="cb58-21"><a href="#cb58-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb58-22"><a href="#cb58-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb58-23"><a href="#cb58-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_count =</span> tidyr<span class="sc">::</span><span class="fu">replace_na</span>(inst_count, <span class="dv">0</span>)</span>
+<span id="cb58-24"><a href="#cb58-24" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb58-25"><a href="#cb58-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calulate totals and proportions for each institution</span></span>
+<span id="cb58-26"><a href="#cb58-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb58-27"><a href="#cb58-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_total =</span> <span class="fu">sum</span>(inst_count), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, label),</span>
+<span id="cb58-28"><a href="#cb58-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_perc =</span> <span class="fu">paste0</span>(<span class="fu">format</span>(<span class="fu">round</span>((inst_count<span class="sc">/</span>inst_total) <span class="sc">*</span><span class="dv">100</span>, <span class="dv">1</span>),</span>
+<span id="cb58-29"><a href="#cb58-29" aria-hidden="true" tabindex="-1"></a>                                <span class="at">nsmall =</span> <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb58-30"><a href="#cb58-30" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb58-31"><a href="#cb58-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate totals and proportions for all</span></span>
+<span id="cb58-32"><a href="#cb58-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb58-33"><a href="#cb58-33" aria-hidden="true" tabindex="-1"></a>      <span class="at">count =</span> <span class="fu">sum</span>(inst_count), <span class="at">.by =</span> <span class="fu">c</span>(label, value)</span>
+<span id="cb58-34"><a href="#cb58-34" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb58-35"><a href="#cb58-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb58-36"><a href="#cb58-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, label),</span>
+<span id="cb58-37"><a href="#cb58-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">perc =</span> <span class="fu">paste0</span>(<span class="fu">format</span>(<span class="fu">round</span>((count<span class="sc">/</span>total) <span class="sc">*</span><span class="dv">100</span>, <span class="dv">1</span>), <span class="at">nsmall =</span> <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb58-38"><a href="#cb58-38" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb58-39"><a href="#cb58-39" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="indicators-of-abuse" class="level2">
+<h2 class="anchored" data-anchor-id="indicators-of-abuse">Indicators of abuse</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>ind_em_labs <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Absence of necessities"</span>, <span class="st">"Environment health or safety concern"</span>, <span class="st">"Defensive"</span>, </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Chemically sedated"</span>, <span class="st">"Isolated"</span>, <span class="st">"Anxious"</span>, <span class="st">"Prohibited"</span>, <span class="st">"Unmet needs"</span>,</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Unexplained injuries"</span> </span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>ind_em_plot_data <span class="ot">&lt;-</span> <span class="fu">univar_plot_data</span>(ind_em_vars, </span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">level_list =</span> <span class="fu">c</span>(<span class="st">"Yes"</span>, <span class="st">"No"</span>, </span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>                                                       <span class="st">"Unable to assess"</span>),</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">labels_list =</span> ind_em_labs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall data not grouped by institution</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>ind_em_plot_data_all <span class="ot">&lt;-</span> ind_em_plot_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(calc_institution_7cat_f, inst_count,</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>                                            inst_perc, inst_total)) <span class="sc">%&gt;%</span> </span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="em-type" class="level2">
+<h2 class="anchored" data-anchor-id="em-type">EM Type</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>em_type_labs <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Self-neglect suspected"</span>, <span class="st">"Financial exploitation suspected"</span>, </span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Emotional or psychological abuse suspected"</span>, <span class="st">"Physical abuse suspected"</span>, </span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Sexual abuse suspected"</span>, <span class="st">"Caregiver neglect suspected"</span>, </span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Abandonment suspected"</span>, <span class="st">"Other mistreatment type suspected"</span>,</span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Dont know/ Not sure of mistreatment type"</span></span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>em_type_plot_data <span class="ot">&lt;-</span> <span class="fu">univar_plot_data</span>(em_type_vars, </span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">level_list =</span> <span class="fu">c</span>(<span class="st">"Yes"</span>, <span class="st">"No"</span>),</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">labels_list =</span> em_type_labs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall data not grouped by institution</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>em_type_plot_data_all <span class="ot">&lt;-</span> em_type_plot_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(calc_institution_7cat_f, inst_count,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>                                            inst_perc, inst_total)) <span class="sc">%&gt;%</span> </span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="counts-for-aps-reports-intended-and-made" class="level3">
+<h3 class="anchored" data-anchor-id="counts-for-aps-reports-intended-and-made">Counts for APS reports intended and made</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Intended reports</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>reports_intended <span class="ot">&lt;-</span> dt_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(ri_patient_mrn, calc_institution_7cat_f, </span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>                                          ri_report_2cat_f, timestamp_end) <span class="sc">%&gt;%</span> </span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter only rows where an intention to report was indicated</span></span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ri_report_2cat_f <span class="sc">==</span> <span class="st">"Yes"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Standardize the MRN to remove trailing zeros at the beginning</span></span>
+<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">std_mrn =</span> <span class="fu">gsub</span>(<span class="st">"^0+"</span>, <span class="st">""</span>, ri_patient_mrn),</span>
+<span id="cb65-9"><a href="#cb65-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ri_date does not always match the timestamp variable so make a new date </span></span>
+<span id="cb65-10"><a href="#cb65-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># variable based on the ending timestamp</span></span>
+<span id="cb65-11"><a href="#cb65-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">end_date =</span> <span class="fu">as.Date</span>(timestamp_end)</span>
+<span id="cb65-12"><a href="#cb65-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(std_mrn, <span class="at">.after =</span> ri_patient_mrn) </span>
+<span id="cb65-13"><a href="#cb65-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb65-14"><a href="#cb65-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Date range</span></span>
+<span id="cb65-15"><a href="#cb65-15" aria-hidden="true" tabindex="-1"></a>start_date <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">as.Date</span>(dt_data<span class="sc">$</span>ri_timestamp_start))</span>
+<span id="cb65-16"><a href="#cb65-16" aria-hidden="true" tabindex="-1"></a>end_date <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">as.Date</span>(dt_data<span class="sc">$</span>timestamp_end))</span>
+<span id="cb65-17"><a href="#cb65-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb65-18"><a href="#cb65-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Reports made</span></span>
+<span id="cb65-19"><a href="#cb65-19" aria-hidden="true" tabindex="-1"></a>intended_reports_made <span class="ot">&lt;-</span> aps_reports_data <span class="sc">%&gt;%</span> </span>
+<span id="cb65-20"><a href="#cb65-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(ar_mrn, ar_encounter_date) <span class="sc">%&gt;%</span></span>
+<span id="cb65-21"><a href="#cb65-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">between</span>(<span class="fu">as.Date</span>(ar_encounter_date), start_date, end_date)) <span class="sc">%&gt;%</span> </span>
+<span id="cb65-22"><a href="#cb65-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Standardize the MRN to remove trailing zeros at the beginning</span></span>
+<span id="cb65-23"><a href="#cb65-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb65-24"><a href="#cb65-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">std_mrn =</span> <span class="fu">gsub</span>(<span class="st">"^0+"</span>, <span class="st">""</span>, ar_mrn)</span>
+<span id="cb65-25"><a href="#cb65-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(std_mrn, <span class="at">.after =</span> ar_mrn) <span class="sc">%&gt;%</span></span>
+<span id="cb65-26"><a href="#cb65-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">right_join</span>(reports_intended, </span>
+<span id="cb65-27"><a href="#cb65-27" aria-hidden="true" tabindex="-1"></a>             <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"ar_encounter_date"</span> <span class="ot">=</span> <span class="st">"end_date"</span>, <span class="st">"std_mrn"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="bivariate-visuals-data" class="level1">
+<h1>Bivariate visuals data</h1>
+<p>Group by Suspect EM</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>bivar_plot_data <span class="ot">&lt;-</span> <span class="cf">function</span>(vars, level_list, labels_list){</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(var <span class="sc">%in%</span> vars) <span class="sc">%&gt;%</span></span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Convert NA into a character value</span></span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> <span class="fu">case_when</span>(<span class="fu">is.na</span>(value) <span class="sc">~</span> <span class="st">"NA"</span>,</span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>                        <span class="cn">TRUE</span> <span class="sc">~</span> value),</span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> <span class="fu">factor</span>(value, </span>
+<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">levels =</span> <span class="fu">c</span>(level_list, <span class="st">"NA"</span>),</span>
+<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>                     <span class="at">exclude =</span> <span class="cn">NULL</span></span>
+<span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a>                     ),</span>
+<span id="cb66-11"><a href="#cb66-11" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Ensure the order of labels in dataframe is maintained in the plot</span></span>
+<span id="cb66-12"><a href="#cb66-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> <span class="fu">rev</span>(<span class="fu">unique</span>(label)))</span>
+<span id="cb66-13"><a href="#cb66-13" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb66-14"><a href="#cb66-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create proportions</span></span>
+<span id="cb66-15"><a href="#cb66-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">reframe</span>(</span>
+<span id="cb66-16"><a href="#cb66-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">inst_count =</span> <span class="fu">n</span>(), </span>
+<span id="cb66-17"><a href="#cb66-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, suspect_em_2cat_f, label, value)</span>
+<span id="cb66-18"><a href="#cb66-18" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb66-19"><a href="#cb66-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Include counts for factor levels that have zero counts</span></span>
+<span id="cb66-20"><a href="#cb66-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(calc_institution_7cat_f, suspect_em_2cat_f, label) <span class="sc">%&gt;%</span></span>
+<span id="cb66-21"><a href="#cb66-21" aria-hidden="true" tabindex="-1"></a>    tidyr<span class="sc">::</span><span class="fu">complete</span>(value) <span class="sc">%&gt;%</span></span>
+<span id="cb66-22"><a href="#cb66-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb66-23"><a href="#cb66-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb66-24"><a href="#cb66-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_count =</span> tidyr<span class="sc">::</span><span class="fu">replace_na</span>(inst_count, <span class="dv">0</span>)</span>
+<span id="cb66-25"><a href="#cb66-25" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb66-26"><a href="#cb66-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calulate totals and proportions for each institution</span></span>
+<span id="cb66-27"><a href="#cb66-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb66-28"><a href="#cb66-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_total =</span> <span class="fu">sum</span>(inst_count), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, </span>
+<span id="cb66-29"><a href="#cb66-29" aria-hidden="true" tabindex="-1"></a>                                            suspect_em_2cat_f, label),</span>
+<span id="cb66-30"><a href="#cb66-30" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_perc =</span> (inst_count<span class="sc">/</span>inst_total) <span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb66-31"><a href="#cb66-31" aria-hidden="true" tabindex="-1"></a>      <span class="at">inst_perc_label =</span> <span class="fu">paste0</span>(<span class="fu">format</span>(<span class="fu">round</span>(inst_perc, <span class="dv">1</span>), <span class="at">nsmall =</span> <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb66-32"><a href="#cb66-32" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb66-33"><a href="#cb66-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calulate totals and proportions for all</span></span>
+<span id="cb66-34"><a href="#cb66-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb66-35"><a href="#cb66-35" aria-hidden="true" tabindex="-1"></a>      <span class="at">count =</span> <span class="fu">sum</span>(inst_count), <span class="at">.by =</span> <span class="fu">c</span>(suspect_em_2cat_f, label, value)</span>
+<span id="cb66-36"><a href="#cb66-36" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb66-37"><a href="#cb66-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb66-38"><a href="#cb66-38" aria-hidden="true" tabindex="-1"></a>      <span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.by =</span> <span class="fu">c</span>(calc_institution_7cat_f, suspect_em_2cat_f,</span>
+<span id="cb66-39"><a href="#cb66-39" aria-hidden="true" tabindex="-1"></a>                                  label),</span>
+<span id="cb66-40"><a href="#cb66-40" aria-hidden="true" tabindex="-1"></a>      <span class="at">perc =</span> (count<span class="sc">/</span>total) <span class="sc">*</span><span class="dv">100</span>, </span>
+<span id="cb66-41"><a href="#cb66-41" aria-hidden="true" tabindex="-1"></a>      <span class="at">perc_label =</span> <span class="fu">paste0</span>(<span class="fu">format</span>(<span class="fu">round</span>(perc, <span class="dv">1</span>), <span class="at">nsmall =</span> <span class="dv">1</span>), <span class="st">"%"</span>)</span>
+<span id="cb66-42"><a href="#cb66-42" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(total, inst_total))</span>
+<span id="cb66-43"><a href="#cb66-43" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="indicators-of-em-module-and-suspect-em" class="level2">
+<h2 class="anchored" data-anchor-id="indicators-of-em-module-and-suspect-em">Indicators of EM Module and Suspect EM</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>ind_sus_em_plot_data <span class="ot">&lt;-</span> <span class="fu">bivar_plot_data</span>(ind_em_vars, </span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">level_list =</span> <span class="fu">c</span>(<span class="st">"Yes"</span>, <span class="st">"No"</span>, </span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>                                                       <span class="st">"Unable to assess"</span>),</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">labels_list =</span> ind_em_labs</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall data for plot not grouped by institution</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>ind_sus_em_plot_data_all <span class="ot">&lt;-</span> ind_sus_em_plot_data <span class="sc">%&gt;%</span> </span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(calc_institution_7cat_f, inst_count, inst_perc, inst_perc_label)</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span> </span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall data for table not grouped by institution</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>ind_sus_em_table_data_all <span class="ot">&lt;-</span> ind_sus_em_plot_data_all <span class="sc">%&gt;%</span></span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(perc)) <span class="sc">%&gt;%</span></span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> ind_em_labs)</span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(label) <span class="sc">%&gt;%</span></span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add shade column</span></span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_shade_column_x_rows</span>(., <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data for tables grouped by institution</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>ind_sus_em_table_data <span class="ot">&lt;-</span> ind_sus_em_plot_data <span class="sc">%&gt;%</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(count, perc, perc_label, inst_perc)) <span class="sc">%&gt;%</span> </span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Arrange df by levels of indicators em label variable</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> ind_em_labs)</span>
+<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="suspect-em-and-em-type" class="level2">
+<h2 class="anchored" data-anchor-id="suspect-em-and-em-type">Suspect EM and EM Type</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>em_type_labs <span class="ot">&lt;-</span> <span class="fu">c</span>( <span class="st">"Self-neglect suspected"</span>, <span class="st">"Financial exploitation suspected"</span>, </span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Emotional or psychological abuse suspected"</span>, </span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Physical abuse suspected"</span>,  <span class="st">"Sexual abuse suspected"</span>, </span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Caregiver neglect suspected"</span>, <span class="st">"Abandonment suspected"</span>, </span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Other mistreatment type suspected"</span>, </span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Dont know/ Not sure of mistreatment type"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>sus_type_em_plot_data <span class="ot">&lt;-</span> <span class="fu">bivar_plot_data</span>(em_type_vars, <span class="at">level_list =</span> <span class="fu">c</span>(<span class="st">"Yes"</span>, <span class="st">"No"</span>),</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">labels_list =</span> em_type_labs) <span class="sc">%&gt;%</span></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(suspect_em_2cat_f <span class="sc">==</span> <span class="st">"Yes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall data for plot not grouped by institution</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>sus_type_em_plot_data_all <span class="ot">&lt;-</span> sus_type_em_plot_data <span class="sc">%&gt;%</span> </span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(calc_institution_7cat_f, inst_count, inst_perc, inst_perc_label)</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span> </span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall data for table not grouped by institution</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>sus_type_em_table_data_all <span class="ot">&lt;-</span> sus_type_em_plot_data_all <span class="sc">%&gt;%</span></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(perc)) <span class="sc">%&gt;%</span> </span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> em_type_labs)</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(label) <span class="sc">%&gt;%</span></span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add shade column</span></span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_shade_column_x_rows</span>(., <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Data for tables grouped by institution</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>sus_type_em_table_data <span class="ot">&lt;-</span> sus_type_em_plot_data <span class="sc">%&gt;%</span></span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(count, perc, perc_label, inst_perc)) <span class="sc">%&gt;%</span>  </span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Arrange df by levels of indicators em label variable</span></span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="fu">factor</span>(label, <span class="at">levels =</span> em_type_labs)</span>
+<span id="cb75-7"><a href="#cb75-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="save-data" class="level1">
+<h1>Save data</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"dashboard_prepped_data.RData"</span>)</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(dt_data, missing_plot_data, baylor_missing_plot_data, jh_missing_plot_data,</span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>     ucsf_missing_plot_data, uab_missing_plot_data, utsw_missing_plot_data,</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>     lbj_missing_plot_data, utp_missing_plot_data, text_box_table_data, </span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>     ind_em_plot_data, ind_em_plot_data_all, em_type_plot_data, </span>
+<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>     em_type_plot_data_all, reports_intended, intended_reports_made, </span>
+<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a>     ind_sus_em_plot_data, ind_sus_em_plot_data_all, ind_sus_em_table_data_all, </span>
+<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>     ind_sus_em_table_data, sus_type_em_plot_data, sus_type_em_plot_data_all,</span>
+<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a>     sus_type_em_table_data_all, sus_type_em_table_data, </span>
+<span id="cb76-10"><a href="#cb76-10" aria-hidden="true" tabindex="-1"></a>     <span class="at">file =</span> path)</span>
+<span id="cb76-11"><a href="#cb76-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
