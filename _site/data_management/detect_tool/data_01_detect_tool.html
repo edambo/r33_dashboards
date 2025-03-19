@@ -253,124 +253,131 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: package 'keyring' was built under R version 4.3.2</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(httr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'httr' was built under R version 4.3.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(jsonlite)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="load-custom-functions" class="level1">
 <h1>Load custom functions</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"recoding_factoring_relocating.R"</span>))</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"nums_to_na.R"</span>))</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"data_cleaning_tools.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"recoding_factoring_relocating.R"</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"nums_to_na.R"</span>))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"data_cleaning_tools.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="load-data" class="level1">
 <h1>Load data</h1>
-<p>An API token unique to each user and project can be requested on REDCap. This API token can be saved on your system using the keyring <code>key_set</code> function as follows: keyring::key_set(“detect_tool_redcap_api”). A password box will pop-up and your unique token can be entered into the text box. Once this is done once, it doesn’t need to be repeated unless a new token is requested on REDCap. The code below can then be run.</p>
+<p>An API token unique to each user and project can be requested on REDCap. To request a token, you can follow the instructions on the repository Wiki <a href="https://github.com/brad-cannell/r33_dashboards/wiki/DETECT%E2%80%90RPC-Data#redcap" class="uri">https://github.com/brad-cannell/r33_dashboards/wiki/DETECT%E2%80%90RPC-Data#redcap</a> This API token can be saved on your system using the keyring <code>key_set</code> function as follows: keyring::key_set(“detect_tool_redcap_api”). A password box will pop-up and your unique token can be entered into the text box. Once this is done once, it doesn’t need to be repeated unless a new token is requested on REDCap. The code below can then be run.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define REDCap API URL and API token</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>api_token <span class="ot">&lt;-</span>  keyring<span class="sc">::</span><span class="fu">key_get</span>(<span class="st">"detect_tool_redcap_api"</span>) <span class="co"># Get saved REDCap API token</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>redcap_url <span class="ot">&lt;-</span> <span class="st">"https://redcap.uth.tmc.edu/api/"</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Establish connection to the REDCap project</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>rcon <span class="ot">&lt;-</span> <span class="fu">redcapConnection</span>(<span class="at">url =</span> redcap_url, <span class="at">token =</span> api_token)</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Export records with coded values</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>tool_raw  <span class="ot">&lt;-</span> <span class="fu">exportRecordsTyped</span>(rcon, <span class="at">form =</span> <span class="st">"reporting_instrument"</span>,</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>                                <span class="at">rawOrLabel =</span> <span class="st">"raw"</span>, <span class="at">factor =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in .castRecords_attachInvalid(rcon = rcon, Records = Records, Raw =
-Raw, : Some records failed validation. Use `reviewInvalidRecords` to review the
-failures.</code></pre>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define REDCap API URL and API token</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>api_token <span class="ot">&lt;-</span>  keyring<span class="sc">::</span><span class="fu">key_get</span>(<span class="st">"detect_tool_redcap_api"</span>) <span class="co"># Get saved REDCap API token</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>redcap_url <span class="ot">&lt;-</span> <span class="st">"https://redcap.uth.tmc.edu/api/"</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Establish connection to the REDCap project</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>rcon <span class="ot">&lt;-</span> <span class="fu">redcapConnection</span>(<span class="at">url =</span> redcap_url, <span class="at">token =</span> api_token)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Export records with coded values</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>tool_raw  <span class="ot">&lt;-</span> <span class="fu">exportRecordsTyped</span>(rcon, <span class="at">form =</span> <span class="st">"reporting_instrument"</span>,</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>                                <span class="at">rawOrLabel =</span> <span class="st">"raw"</span>, <span class="at">factor =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>An API token can be requested on GO UTHealth. To request a token, you can follow the instructions on the repository Wiki <a href="https://github.com/brad-cannell/r33_dashboards/wiki/DETECT%E2%80%90RPC-Data#go-ut-health" class="uri">https://github.com/brad-cannell/r33_dashboards/wiki/DETECT%E2%80%90RPC-Data#go-ut-health</a> This API token along with the client application name can be saved on your system using the keyring <code>key_set</code> function with the service argument = “detect_tool_go_uth_api”. The code below can then be run.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>go_uth_app_name <span class="ot">&lt;-</span> keyring<span class="sc">::</span><span class="fu">key_list</span>(<span class="st">"detect_tool_go_uth_api"</span>)[<span class="dv">1</span>,<span class="dv">2</span>]</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>go_uth_api_token <span class="ot">&lt;-</span>  keyring<span class="sc">::</span><span class="fu">key_get</span>(<span class="st">"detect_tool_go_uth_api"</span>, go_uth_app_name) <span class="co"># Get saved API token</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="do">## Function to get link data</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>go_uth_link_api <span class="ot">&lt;-</span> <span class="cf">function</span>(slug){</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  go_uth_url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://apps.uth.edu/go/api/urls/"</span>, slug, <span class="st">"/traffic"</span>)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  start_date <span class="ot">&lt;-</span> <span class="st">"03/12/2025"</span> <span class="co"># Date of first launch of DETECT-RPC TOOL</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  end_date <span class="ot">&lt;-</span> <span class="fu">format</span>(<span class="fu">Sys.Date</span>(), <span class="at">format =</span> <span class="st">"%m/%d/%Y"</span>) <span class="co"># today's date</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  details <span class="ot">&lt;-</span> <span class="fu">POST</span>(go_uth_url, </span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">add_headers</span>(</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">`</span><span class="at">Authorization</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">paste</span>(<span class="st">"Bearer"</span>, go_uth_api_token),</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>                    <span class="st">`</span><span class="at">Content-type</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"application/json"</span>,</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>                    <span class="st">`</span><span class="at">appName</span><span class="st">`</span> <span class="ot">=</span> go_uth_app_name,</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>                    <span class="st">`</span><span class="at">startDate</span><span class="st">`</span> <span class="ot">=</span> start_date,</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>                    <span class="st">`</span><span class="at">endDate</span><span class="st">`</span> <span class="ot">=</span> end_date</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>                  ))</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract and parse the JSON response</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>  raw_content <span class="ot">&lt;-</span> <span class="fu">content</span>(details, <span class="st">"text"</span>, <span class="at">encoding =</span> <span class="st">"UTF-8"</span>)</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>  parsed_json <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(raw_content, <span class="at">flatten =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create column name based on slug</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>  new_col_name <span class="ot">&lt;-</span> snakecase<span class="sc">::</span><span class="fu">to_snake_case</span>(slug)</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract the traffic data frame from parsed_json list</span></span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>  parsed_json<span class="sc">$</span>traffic <span class="sc">%&gt;%</span> <span class="fu">rename_with</span>(<span class="sc">~</span>new_col_name, <span class="st">"hit"</span>) </span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Link data</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>definitions_link_hits <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"link_data"</span>, </span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>             <span class="st">"hits_for_elder_abuse_definitions.xlsx"</span>), </span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">col_names =</span> <span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"elder_abuse_definitions"</span>), <span class="at">skip =</span> <span class="dv">1</span>,</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>al_link_hits <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"link_data"</span>, </span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>             <span class="st">"hits_for_detect_al.xlsx"</span>), <span class="at">skip =</span> <span class="dv">1</span>,</span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">col_names =</span> <span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"detect_al"</span>)</span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>ca_link_hits <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(</span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"link_data"</span>, </span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">"hits_for_detect_ca.xlsx"</span>), <span class="at">skip =</span> <span class="dv">1</span>,</span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">col_names =</span> <span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"detect_ca"</span>)</span>
-<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>md_link_hits <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(</span>
-<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"link_data"</span>, </span>
-<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>             <span class="st">"hits_for_detect_md.xlsx"</span>), <span class="at">skip =</span> <span class="dv">1</span>,</span>
-<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">col_names =</span> <span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"detect_md"</span>)</span>
-<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>tx_link_hits <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(</span>
-<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>, <span class="st">"link_data"</span>, </span>
-<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>             <span class="st">"hits_for_detect_tx.xlsx"</span>), <span class="at">skip =</span> <span class="dv">1</span>, </span>
-<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">col_names =</span> <span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"detect_tx"</span>)</span>
-<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>definitions_link_hits <span class="ot">&lt;-</span> <span class="fu">go_uth_link_api</span>(<span class="st">"elder_abuse_definitions"</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>al_link_hits <span class="ot">&lt;-</span> <span class="fu">go_uth_link_api</span>(<span class="st">"detect-al"</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>ca_link_hits <span class="ot">&lt;-</span> <span class="fu">go_uth_link_api</span>(<span class="st">"detect-ca"</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>md_link_hits <span class="ot">&lt;-</span> <span class="fu">go_uth_link_api</span>(<span class="st">"detect-md"</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>tx_link_hits <span class="ot">&lt;-</span> <span class="fu">go_uth_link_api</span>(<span class="st">"detect-tx"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="column-name-cleaning" class="level1">
 <h1>Column name cleaning</h1>
 <p>Here we will convert all variable names to snake case with double underscores reduced to single underscores so that everything is uniform.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>tool_raw <span class="ot">&lt;-</span> <span class="fu">clean_names</span>(tool_raw) <span class="sc">%&gt;%</span> </span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ri_clinician_id =</span> ri_clinician_id_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>tool_raw <span class="ot">&lt;-</span> <span class="fu">clean_names</span>(tool_raw) <span class="sc">%&gt;%</span> </span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ri_clinician_id =</span> ri_clinician_id_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="create-a-dataframe-with-variable-descriptions" class="level1">
 <h1>Create a dataframe with variable descriptions</h1>
 <p>Extract the column names from the data and labels data frames to create a data frame of variable descriptions.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create list of shortened variable labels based on the descriptions/ original questions</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>labels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Record ID"</span>, <span class="st">"Survey Identifier"</span>, <span class="st">"Survey Timestamp"</span>, </span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Form start timestamp"</span>, <span class="st">"Form date"</span>, <span class="st">"Enter survey password"</span>, </span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Password verification"</span>, <span class="st">"Password verification"</span>, <span class="st">"Patient MRN"</span>, </span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Institution"</span>, <span class="st">"Institution"</span>, <span class="st">"Institution"</span>, <span class="st">"Baylor clinician name"</span>, </span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other Baylor clinician name"</span>, <span class="st">"Johns Hopkins clinician name"</span>, </span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other Johns Hopkins clinician name"</span>, <span class="st">"UCSF clinician name"</span>,</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UCSF clinician name"</span>, <span class="st">"UAB clinician name"</span>, </span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UAB clinician name"</span>, <span class="st">"UTSW clinician name"</span>, </span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UTSW clinician name"</span>, <span class="st">"LBJ clinician name"</span>, </span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other LBJ clinician name"</span>, <span class="st">"UTP clinician name"</span>, </span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UTP clinician name"</span>, <span class="st">"Clinician ID"</span>, <span class="st">"Clinician name"</span>, </span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Absence of necessities"</span>, <span class="st">"Environment health or safety concern"</span>, </span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Environment not assessed reason"</span>, <span class="st">"Defensive"</span>, </span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Caregiver not assessed reason"</span>, <span class="st">"Other reason caregiver not assessed"</span>,</span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Chemically sedated"</span>, <span class="st">"Isolated"</span>, <span class="st">"Anxious"</span>, <span class="st">"Prohibited"</span>, <span class="st">"Unmet needs"</span>, </span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Unexplained injuries"</span>, <span class="st">"Patient not assessed reason"</span>, </span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Suspect EM"</span>, <span class="st">"Indicators observed but EM not suspected reason"</span>, </span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Suspect EM reason"</span>, <span class="st">"Self-neglect suspected"</span>, </span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Financial exploitation suspected"</span>, </span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Emotional or psychological abuse suspected"</span>, </span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Physical abuse suspected"</span>, <span class="st">"Sexual abuse suspected"</span>, </span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Caregiver neglect suspected"</span>, <span class="st">"Abandonment suspected"</span>, </span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other mistreatment type suspected"</span>, </span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Dont know/ Not sure of mistreatment type"</span>, </span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Specific other mistreatment type suspected"</span>, </span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Intend to report to APS"</span>, <span class="st">"No intention to report to APS reason"</span>, </span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other service referral"</span>, <span class="st">"Specify other service"</span>, </span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Have helpful details"</span>, <span class="st">"Brief note"</span>, <span class="st">"Complete"</span></span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Add missing variable labels for REDCap variables lost with API</span></span>
-<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(tool_raw<span class="sc">$</span>redcap_survey_identifier)<span class="sc">$</span>label <span class="ot">&lt;-</span> <span class="st">"Survey Identifier"</span></span>
-<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(tool_raw<span class="sc">$</span>reporting_instrument_timestamp)<span class="sc">$</span>label <span class="ot">&lt;-</span> <span class="st">"Survey Timestamp"</span></span>
-<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(tool_raw<span class="sc">$</span>reporting_instrument_complete)<span class="sc">$</span>label <span class="ot">&lt;-</span><span class="st">" Complete?"</span></span>
-<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine the variable names, descriptions and labels into a dataframe</span></span>
-<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>vars_labels <span class="ot">&lt;-</span> <span class="fu">sapply</span>(tool_raw,</span>
-<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>       <span class="cf">function</span>(x){<span class="fu">attr</span>(x,<span class="st">"label"</span>)})</span>
-<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>var_desc <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">variable =</span> <span class="fu">names</span>(vars_labels), <span class="at">description =</span> <span class="fu">unname</span>(vars_labels), </span>
-<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a>                       <span class="at">label =</span> labels, <span class="at">row.names =</span> <span class="cn">NULL</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create list of shortened variable labels based on the descriptions/ original questions</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>labels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Record ID"</span>, <span class="st">"Survey Identifier"</span>, <span class="st">"Survey Timestamp"</span>, </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Form start timestamp"</span>, <span class="st">"Form date"</span>, <span class="st">"Enter survey password"</span>, </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Password verification"</span>, <span class="st">"Password verification"</span>, <span class="st">"Patient MRN"</span>, </span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Institution"</span>, <span class="st">"Institution"</span>, <span class="st">"Institution"</span>, <span class="st">"Baylor clinician name"</span>, </span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other Baylor clinician name"</span>, <span class="st">"Johns Hopkins clinician name"</span>, </span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other Johns Hopkins clinician name"</span>, <span class="st">"UCSF clinician name"</span>,</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UCSF clinician name"</span>, <span class="st">"UAB clinician name"</span>, </span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UAB clinician name"</span>, <span class="st">"UTSW clinician name"</span>, </span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UTSW clinician name"</span>, <span class="st">"LBJ clinician name"</span>, </span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other LBJ clinician name"</span>, <span class="st">"UTP clinician name"</span>, </span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other UTP clinician name"</span>, <span class="st">"Clinician ID"</span>, <span class="st">"Clinician name"</span>, </span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Absence of necessities"</span>, <span class="st">"Environment health or safety concern"</span>, </span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Environment not assessed reason"</span>, <span class="st">"Defensive"</span>, </span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Caregiver not assessed reason"</span>, <span class="st">"Other reason caregiver not assessed"</span>,</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Chemically sedated"</span>, <span class="st">"Isolated"</span>, <span class="st">"Anxious"</span>, <span class="st">"Prohibited"</span>, <span class="st">"Unmet needs"</span>, </span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Unexplained injuries"</span>, <span class="st">"Patient not assessed reason"</span>, </span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Suspect EM"</span>, <span class="st">"Indicators observed but EM not suspected reason"</span>, </span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Suspect EM reason"</span>, <span class="st">"Self-neglect suspected"</span>, </span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Financial exploitation suspected"</span>, </span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Emotional or psychological abuse suspected"</span>, </span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Physical abuse suspected"</span>, <span class="st">"Sexual abuse suspected"</span>, </span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Caregiver neglect suspected"</span>, <span class="st">"Abandonment suspected"</span>, </span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other mistreatment type suspected"</span>, </span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Dont know/ Not sure of mistreatment type"</span>, </span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Specific other mistreatment type suspected"</span>, </span>
+<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Intend to report to APS"</span>, <span class="st">"No intention to report to APS reason"</span>, </span>
+<span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Other service referral"</span>, <span class="st">"Specify other service"</span>, </span>
+<span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a>           <span class="st">"Have helpful details"</span>, <span class="st">"Brief note"</span>, <span class="st">"Complete"</span></span>
+<span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Add missing variable labels for REDCap variables lost with API</span></span>
+<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(tool_raw<span class="sc">$</span>redcap_survey_identifier)<span class="sc">$</span>label <span class="ot">&lt;-</span> <span class="st">"Survey Identifier"</span></span>
+<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(tool_raw<span class="sc">$</span>reporting_instrument_timestamp)<span class="sc">$</span>label <span class="ot">&lt;-</span> <span class="st">"Survey Timestamp"</span></span>
+<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(tool_raw<span class="sc">$</span>reporting_instrument_complete)<span class="sc">$</span>label <span class="ot">&lt;-</span><span class="st">" Complete?"</span></span>
+<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine the variable names, descriptions and labels into a dataframe</span></span>
+<span id="cb27-38"><a href="#cb27-38" aria-hidden="true" tabindex="-1"></a>vars_labels <span class="ot">&lt;-</span> <span class="fu">sapply</span>(tool_raw,</span>
+<span id="cb27-39"><a href="#cb27-39" aria-hidden="true" tabindex="-1"></a>       <span class="cf">function</span>(x){<span class="fu">attr</span>(x,<span class="st">"label"</span>)})</span>
+<span id="cb27-40"><a href="#cb27-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-41"><a href="#cb27-41" aria-hidden="true" tabindex="-1"></a>var_desc <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">variable =</span> <span class="fu">names</span>(vars_labels), <span class="at">description =</span> <span class="fu">unname</span>(vars_labels), </span>
+<span id="cb27-42"><a href="#cb27-42" aria-hidden="true" tabindex="-1"></a>                       <span class="at">label =</span> labels, <span class="at">row.names =</span> <span class="cn">NULL</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb27-43"><a href="#cb27-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="create-new-variables" class="level1">
@@ -379,42 +386,42 @@ failures.</code></pre>
 <h2 class="anchored" data-anchor-id="replace-reporting-instument-timestamp-variable-with-timestamp-end-variable">Replace reporting instument timestamp variable with timestamp end variable</h2>
 <p>The <code>reporting_instrument_timestamp</code> variable contains information on both the submission time and the completion status of each survey response. The variable <code>reporting_instrument_complete</code> also provides completion status information. A new variable will be created that only contains the sumbmission time and the reporting_instrument_timestamp variable will be removed.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool_raw <span class="sc">%&gt;%</span> </span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">timestamp_end =</span> <span class="fu">case_when</span>(</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(reporting_instrument_timestamp) <span class="sc">~</span> <span class="cn">NA</span>,</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>      reporting_instrument_timestamp <span class="sc">==</span> <span class="st">"[not completed]"</span> <span class="sc">~</span> <span class="cn">NA</span>,</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> reporting_instrument_timestamp</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">timestamp_end =</span> <span class="fu">as.POSIXct</span>(timestamp_end, <span class="at">tz =</span> <span class="st">"UTC"</span>)</span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(<span class="fu">c</span>(timestamp_end, reporting_instrument_complete),</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">.after =</span> ri_timestamp_start) <span class="sc">%&gt;%</span></span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(reporting_instrument_timestamp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool_raw <span class="sc">%&gt;%</span> </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">timestamp_end =</span> <span class="fu">case_when</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(reporting_instrument_timestamp) <span class="sc">~</span> <span class="cn">NA</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>      reporting_instrument_timestamp <span class="sc">==</span> <span class="st">"[not completed]"</span> <span class="sc">~</span> <span class="cn">NA</span>,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> reporting_instrument_timestamp</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">timestamp_end =</span> <span class="fu">as.POSIXct</span>(timestamp_end, <span class="at">tz =</span> <span class="st">"UTC"</span>)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(<span class="fu">c</span>(timestamp_end, reporting_instrument_complete),</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">.after =</span> ri_timestamp_start) <span class="sc">%&gt;%</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(reporting_instrument_timestamp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="clinician-names" class="level2">
 <h2 class="anchored" data-anchor-id="clinician-names">Clinician names</h2>
 <p>Combine clinician names across all institutions into a single column</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>clinician_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_clinician_bcm"</span>, <span class="st">"ri_clinician_bcm_oth"</span>, </span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_jh"</span>, <span class="st">"ri_clinician_jh_oth"</span>, </span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_ucsf"</span>, <span class="st">"ri_clinician_ucsf_oth"</span>, </span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_uab"</span>, <span class="st">"ri_clinician_uab_oth"</span>, </span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_utsw"</span>, <span class="st">"ri_clinician_utsw_oth"</span>, </span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_lbj"</span>, <span class="st">"ri_clinician_lbj_oth"</span>, </span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_utp"</span>, <span class="st">"ri_clinician_utp_oth"</span>)</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span> </span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">ri_clinician_id_name =</span> <span class="fu">coalesce</span>(ri_clinician_utp_oth, ri_clinician_utp, </span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_lbj_oth, ri_clinician_lbj, </span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_utsw_oth, ri_clinician_utsw, </span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_uab_oth, ri_clinician_uab, </span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_ucsf_oth, ri_clinician_ucsf, </span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_jh_oth, ri_clinician_jh, </span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_bcm_oth, ri_clinician_bcm)</span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(<span class="fu">all_of</span>(clinician_names))) <span class="sc">%&gt;%</span></span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(ri_clinician_id_name, <span class="at">.after =</span> ri_clinician_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>clinician_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_clinician_bcm"</span>, <span class="st">"ri_clinician_bcm_oth"</span>, </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_jh"</span>, <span class="st">"ri_clinician_jh_oth"</span>, </span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_ucsf"</span>, <span class="st">"ri_clinician_ucsf_oth"</span>, </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_uab"</span>, <span class="st">"ri_clinician_uab_oth"</span>, </span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_utsw"</span>, <span class="st">"ri_clinician_utsw_oth"</span>, </span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_lbj"</span>, <span class="st">"ri_clinician_lbj_oth"</span>, </span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ri_clinician_utp"</span>, <span class="st">"ri_clinician_utp_oth"</span>)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span> </span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">ri_clinician_id_name =</span> <span class="fu">coalesce</span>(ri_clinician_utp_oth, ri_clinician_utp, </span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_lbj_oth, ri_clinician_lbj, </span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_utsw_oth, ri_clinician_utsw, </span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_uab_oth, ri_clinician_uab, </span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_ucsf_oth, ri_clinician_ucsf, </span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_jh_oth, ri_clinician_jh, </span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>                                     ri_clinician_bcm_oth, ri_clinician_bcm)</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(<span class="fu">all_of</span>(clinician_names))) <span class="sc">%&gt;%</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(ri_clinician_id_name, <span class="at">.after =</span> ri_clinician_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="numeric-and-factor-variables" class="level2">
@@ -423,211 +430,154 @@ failures.</code></pre>
 <h3 class="anchored" data-anchor-id="convert-all-factor-variables-to-character-variables">Convert all factor variables to character variables</h3>
 <p>Before the appropriate factor variables with the appropriate levels can be set, the ones automatically created need to be removed.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">.cols =</span> <span class="fu">where</span>(is.factor),</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> <span class="sc">~</span> <span class="fu">as.character</span>(.x)</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">.cols =</span> <span class="fu">where</span>(is.factor),</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> <span class="sc">~</span> <span class="fu">as.character</span>(.x)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="institution" class="level3">
 <h3 class="anchored" data-anchor-id="institution">Institution</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_institution"</span>, <span class="st">"ri_institution_2"</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_institution"</span>, <span class="st">"ri_institution_2"</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Baylor College of Medicine - BT House Calls"
-[2] "Johns Hopkins - JHOME"                      
-[3] "University of Alabama - UAB House Calls"    
-[4] "UT Southwestern - COVE"                     
-[5] "UTH Houston - LBJ House Calls"              
-[6] "UTH Houston - UT Physicians House Calls"    </code></pre>
+<pre><code>[1] "University of Alabama - UAB House Calls"
+[2] "UTH Houston - UT Physicians House Calls"</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Baylor College of Medicine - BT House Calls"</span> <span class="ot">=</span> <span class="dv">1</span>, </span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Johns Hopkins - JHOME"</span> <span class="ot">=</span> <span class="dv">2</span>, </span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UCSF - Care at Home Program"</span> <span class="ot">=</span> <span class="dv">3</span>,</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"University of Alabama - UAB House Calls"</span> <span class="ot">=</span> <span class="dv">4</span>, </span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UT Southwestern - COVE"</span> <span class="ot">=</span> <span class="dv">5</span>, </span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UTH Houston - LBJ House Calls"</span> <span class="ot">=</span> <span class="dv">6</span>,</span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UTH Houston - UT Physicians House Calls"</span> <span class="ot">=</span> <span class="dv">7</span></span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
-<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
-<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
-<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"7cat"</span></span>
-<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
-<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
-<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
-<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
-<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
-<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
-<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
-<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
-<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
-<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
-<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
-<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
-<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
-<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb30-39"><a href="#cb30-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb30-40"><a href="#cb30-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
-<span id="cb30-41"><a href="#cb30-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
-<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
-<span id="cb30-43"><a href="#cb30-43" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
-<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
-<span id="cb30-45"><a href="#cb30-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Baylor College of Medicine - BT House Calls"</span> <span class="ot">=</span> <span class="dv">1</span>, </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Johns Hopkins - JHOME"</span> <span class="ot">=</span> <span class="dv">2</span>, </span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UCSF - Care at Home Program"</span> <span class="ot">=</span> <span class="dv">3</span>,</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"University of Alabama - UAB House Calls"</span> <span class="ot">=</span> <span class="dv">4</span>, </span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UT Southwestern - COVE"</span> <span class="ot">=</span> <span class="dv">5</span>, </span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UTH Houston - LBJ House Calls"</span> <span class="ot">=</span> <span class="dv">6</span>,</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"UTH Houston - UT Physicians House Calls"</span> <span class="ot">=</span> <span class="dv">7</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"7cat"</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
+<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
+<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb33-36"><a href="#cb33-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb33-37"><a href="#cb33-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
+<span id="cb33-38"><a href="#cb33-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb33-39"><a href="#cb33-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb33-40"><a href="#cb33-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
+<span id="cb33-41"><a href="#cb33-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
+<span id="cb33-42"><a href="#cb33-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
+<span id="cb33-43"><a href="#cb33-43" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
+<span id="cb33-44"><a href="#cb33-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
+<span id="cb33-45"><a href="#cb33-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">calc_institution_7cat =</span> calc_institution) <span class="sc">%&gt;%</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">calc_institution_7cat_f =</span> <span class="fu">factor</span>(</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>      calc_institution_7cat, <span class="at">levels =</span> <span class="fu">as.numeric</span>(value_labels),</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">names</span>(value_labels)</span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(calc_institution_7cat_f, <span class="at">.after =</span> calc_institution_7cat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">calc_institution_7cat =</span> calc_institution) <span class="sc">%&gt;%</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">calc_institution_7cat_f =</span> <span class="fu">factor</span>(</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>      calc_institution_7cat, <span class="at">levels =</span> <span class="fu">as.numeric</span>(value_labels),</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">names</span>(value_labels)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">relocate</span>(calc_institution_7cat_f, <span class="at">.after =</span> calc_institution_7cat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="screening-items" class="level3">
 <h3 class="anchored" data-anchor-id="screening-items">Screening items</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_necessities"</span>, <span class="st">"ri_environment"</span>, <span class="st">"ri_caregiver"</span>, <span class="st">"ri_sedated"</span>, </span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_isolated"</span>, <span class="st">"ri_anxious"</span>, <span class="st">"ri_prohibited"</span>, <span class="st">"ri_unmet_needs"</span>, </span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_injuries"</span>)</span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_necessities"</span>, <span class="st">"ri_environment"</span>, <span class="st">"ri_caregiver"</span>, <span class="st">"ri_sedated"</span>, </span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_isolated"</span>, <span class="st">"ri_anxious"</span>, <span class="st">"ri_prohibited"</span>, <span class="st">"ri_unmet_needs"</span>, </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ri_injuries"</span>)</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "No"               "Unable to assess" "Yes"             </code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Yes"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No"</span> <span class="ot">=</span> <span class="dv">0</span>,</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Unable to assess"</span> <span class="ot">=</span> <span class="dv">99</span></span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
-<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"3cat"</span></span>
-<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
-<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
-<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
-<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
-<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
-<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
-<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
-<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
-<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
-<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
-<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
-<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
-<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
-<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
-<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
-<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
-<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
-<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
-<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="ri_caregiver_un_reason" class="level3">
-<h3 class="anchored" data-anchor-id="ri_caregiver_un_reason">ri_caregiver_un_reason</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_caregiver_un_reason"</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Caregiver not present"</code></pre>
+<pre><code>[1] "No"               "Unable to assess"</code></pre>
 </div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Caregiver not present"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Other reason"</span> <span class="ot">=</span> <span class="dv">98</span></span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"2cat"</span></span>
-<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
-<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
-<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
-<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
-<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
-<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
-<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
-<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
-<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
-<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
-<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
-<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
-<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
-<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb37-35"><a href="#cb37-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
-<span id="cb37-36"><a href="#cb37-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
-<span id="cb37-37"><a href="#cb37-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
-<span id="cb37-38"><a href="#cb37-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
-<span id="cb37-39"><a href="#cb37-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
-<span id="cb37-40"><a href="#cb37-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Yes"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No"</span> <span class="ot">=</span> <span class="dv">0</span>,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Unable to assess"</span> <span class="ot">=</span> <span class="dv">99</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"3cat"</span></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb37-35"><a href="#cb37-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb37-36"><a href="#cb37-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
+<span id="cb37-37"><a href="#cb37-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
+<span id="cb37-38"><a href="#cb37-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
+<span id="cb37-39"><a href="#cb37-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
+<span id="cb37-40"><a href="#cb37-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
+<span id="cb37-41"><a href="#cb37-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="yes-or-no" class="level3">
-<h3 class="anchored" data-anchor-id="yes-or-no">Yes or No</h3>
+<section id="ri_caregiver_un_reason" class="level3">
+<h3 class="anchored" data-anchor-id="ri_caregiver_un_reason">ri_caregiver_un_reason</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"suspect_em"</span>, <span class="st">"ri_report"</span>, <span class="st">"ri_refer_svcs"</span>, <span class="st">"ri_reflection"</span>)</span>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ri_caregiver_un_reason"</span>)</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "No"  "Yes"</code></pre>
+<pre><code>[1] "Caregiver not present"</code></pre>
 </div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Yes"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No"</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Caregiver not present"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Other reason"</span> <span class="ot">=</span> <span class="dv">98</span></span>
 <span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
@@ -666,70 +616,123 @@ failures.</code></pre>
 <span id="cb40-40"><a href="#cb40-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
+<section id="yes-or-no" class="level3">
+<h3 class="anchored" data-anchor-id="yes-or-no">Yes or No</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"suspect_em"</span>, <span class="st">"ri_report"</span>, <span class="st">"ri_refer_svcs"</span>, <span class="st">"ri_reflection"</span>)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "No"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Yes"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No"</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"2cat"</span></span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
+<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
+<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
+<span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
+<span id="cb43-27"><a href="#cb43-27" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
+<span id="cb43-28"><a href="#cb43-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
+<span id="cb43-29"><a href="#cb43-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
+<span id="cb43-30"><a href="#cb43-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb43-31"><a href="#cb43-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb43-32"><a href="#cb43-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
+<span id="cb43-33"><a href="#cb43-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb43-34"><a href="#cb43-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb43-35"><a href="#cb43-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
+<span id="cb43-36"><a href="#cb43-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
+<span id="cb43-37"><a href="#cb43-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
+<span id="cb43-38"><a href="#cb43-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
+<span id="cb43-39"><a href="#cb43-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
+<span id="cb43-40"><a href="#cb43-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
 <section id="em-type" class="level3">
 <h3 class="anchored" data-anchor-id="em-type">EM type</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"ri_em_type_"</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>, <span class="dv">98</span>, <span class="dv">99</span>))</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="do">### Change factor labels from "checked" and "unchecked" to "Yes" and "No"</span></span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span> </span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">.cols =</span> <span class="fu">all_of</span>(cols),</span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> <span class="sc">~</span> <span class="fu">case_when</span>(</span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>        .x <span class="sc">==</span> <span class="st">"Checked"</span> <span class="sc">~</span> <span class="st">"Yes"</span>,</span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>        .x <span class="sc">==</span> <span class="st">"Unchecked"</span> <span class="sc">~</span> <span class="st">"No"</span></span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"ri_em_type_"</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>, <span class="dv">98</span>, <span class="dv">99</span>))</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="do">### Change factor labels from "checked" and "unchecked" to "Yes" and "No"</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span> </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">.cols =</span> <span class="fu">all_of</span>(cols),</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> <span class="sc">~</span> <span class="fu">case_when</span>(</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>        .x <span class="sc">==</span> <span class="st">"Checked"</span> <span class="sc">~</span> <span class="st">"Yes"</span>,</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>        .x <span class="sc">==</span> <span class="st">"Unchecked"</span> <span class="sc">~</span> <span class="st">"No"</span></span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_values</span>(tool, cols)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "No"  "Yes"</code></pre>
+<pre><code>[1] "No"</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Yes"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No"</span> <span class="ot">=</span> <span class="dv">0</span></span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
-<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"2cat"</span></span>
-<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
-<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
-<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
-<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
-<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
-<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
-<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
-<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
-<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
-<span id="cb44-27"><a href="#cb44-27" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
-<span id="cb44-28"><a href="#cb44-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
-<span id="cb44-29"><a href="#cb44-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
-<span id="cb44-30"><a href="#cb44-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
-<span id="cb44-31"><a href="#cb44-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb44-32"><a href="#cb44-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
-<span id="cb44-33"><a href="#cb44-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
-<span id="cb44-34"><a href="#cb44-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
-<span id="cb44-35"><a href="#cb44-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
-<span id="cb44-36"><a href="#cb44-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
-<span id="cb44-37"><a href="#cb44-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
-<span id="cb44-38"><a href="#cb44-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
-<span id="cb44-39"><a href="#cb44-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
-<span id="cb44-40"><a href="#cb44-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Numeric coding for character values in each column of interest</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>value_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Yes"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"No"</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="co"># NA values</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>na_values <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Suffix for the version of each column with "Don't Know" and "Refused" changed</span></span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a><span class="co"># to NA.</span></span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>suffix <span class="ot">&lt;-</span> <span class="st">"2cat"</span></span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels and levels for factors (Shouldn't need to change this code)</span></span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>factor_labs_levs <span class="ot">&lt;-</span> value_labels[<span class="sc">!</span>value_labels <span class="sc">%in%</span> na_values]</span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Column names for the version of each column with "Don't Know" and "Refused" </span></span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a><span class="co"># changed to NA (Shouldn't need to change this code).</span></span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a>cols_suffix <span class="ot">&lt;-</span> <span class="fu">paste</span>(cols, suffix, <span class="at">sep =</span> <span class="st">"_"</span>)</span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare columns for analysis</span></span>
+<span id="cb47-22"><a href="#cb47-22" aria-hidden="true" tabindex="-1"></a><span class="co"># - Convert character values to numeric values</span></span>
+<span id="cb47-23"><a href="#cb47-23" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb47-24"><a href="#cb47-24" aria-hidden="true" tabindex="-1"></a><span class="co"># - Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb47-25"><a href="#cb47-25" aria-hidden="true" tabindex="-1"></a><span class="co"># - Arrange the columns as: original column, numeric column w/o "Don't know" and </span></span>
+<span id="cb47-26"><a href="#cb47-26" aria-hidden="true" tabindex="-1"></a><span class="co">#   "Refused", and the factor version of the column.</span></span>
+<span id="cb47-27"><a href="#cb47-27" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">|&gt;</span></span>
+<span id="cb47-28"><a href="#cb47-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert character values to numeric values</span></span>
+<span id="cb47-29"><a href="#cb47-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chars_to_nums</span>(cols, value_labels) <span class="sc">|&gt;</span> </span>
+<span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a version of each column with "Don't know" and "Refused" converted to NA</span></span>
+<span id="cb47-31"><a href="#cb47-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nums_to_nas</span>(cols, na_values, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb47-32"><a href="#cb47-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate new columns with NA values immediately after the original column</span></span>
+<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_na_cols</span>(cols, suffix) <span class="sc">|&gt;</span> </span>
+<span id="cb47-34"><a href="#cb47-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a factor version of each column (w/o "Don't know" and "Refused")</span></span>
+<span id="cb47-35"><a href="#cb47-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factors</span>(cols_suffix, factor_labs_levs) <span class="sc">|&gt;</span> </span>
+<span id="cb47-36"><a href="#cb47-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Relocate factor columns immediately after the new columns with NA values</span></span>
+<span id="cb47-37"><a href="#cb47-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate_factors</span>(cols_suffix) <span class="sc">|&gt;</span></span>
+<span id="cb47-38"><a href="#cb47-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the original variable if the version with "cat" suffix has the exact</span></span>
+<span id="cb47-39"><a href="#cb47-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># same values.</span></span>
+<span id="cb47-40"><a href="#cb47-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_dup_orig</span>(cols, cols_suffix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -737,68 +740,68 @@ failures.</code></pre>
 <section id="remove-variables-without-important-research-data" class="level1">
 <h1>Remove variables without important research data</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span> </span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(redcap_survey_identifier, password_entry, password_incorrect_1, </span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>            ri_clinician_name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>tool <span class="ot">&lt;-</span> tool <span class="sc">%&gt;%</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(redcap_survey_identifier, password_entry, password_incorrect_1, </span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>            ri_clinician_name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="update-variable-descriptions-dataframe-with-new-variables" class="level1">
 <h1>Update variable descriptions dataframe with new variables</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>tool_vars <span class="ot">&lt;-</span> <span class="fu">names</span>(tool) <span class="sc">%&gt;%</span> </span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Subset new variables</span></span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setdiff</span>(., var_desc<span class="sc">$</span>variable) <span class="sc">%&gt;%</span></span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert list of new variables into dataframe</span></span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>(<span class="at">col.names =</span> <span class="st">"variable"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Join descriptions from var_desc dataframe to new data frame </span></span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_suffix =</span> <span class="fu">gsub</span>(<span class="st">"_[0-9]+cat[_f]*"</span>, <span class="st">""</span>, <span class="at">x =</span> variable)</span>
-<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"no_suffix"</span> <span class="ot">=</span> <span class="st">"variable"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># remove "no_suffix" variable</span></span>
-<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(no_suffix))</span>
-<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb46-14"><a href="#cb46-14" aria-hidden="true" tabindex="-1"></a>var_desc <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(var_desc, tool_vars) <span class="sc">%&gt;%</span> </span>
-<span id="cb46-15"><a href="#cb46-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_row</span>(<span class="at">variable =</span> <span class="st">"timestamp_end"</span>, <span class="at">description =</span> <span class="st">"Form end timestamp"</span>,</span>
-<span id="cb46-16"><a href="#cb46-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">label =</span> <span class="st">"Form start timestamp"</span>, <span class="at">id =</span> <span class="dv">62</span>) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(id) <span class="sc">%&gt;%</span> </span>
-<span id="cb46-17"><a href="#cb46-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_row</span>(<span class="at">variable =</span> <span class="st">"ri_clinician_id_name"</span>, <span class="at">description =</span> <span class="st">"Clinician name"</span>,</span>
-<span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a>          <span class="at">label =</span> <span class="st">"Clinician name"</span>, <span class="at">id =</span> <span class="dv">28</span>) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(id) <span class="sc">%&gt;%</span></span>
-<span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(id))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>tool_vars <span class="ot">&lt;-</span> <span class="fu">names</span>(tool) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Subset new variables</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setdiff</span>(., var_desc<span class="sc">$</span>variable) <span class="sc">%&gt;%</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert list of new variables into dataframe</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>(<span class="at">col.names =</span> <span class="st">"variable"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Join descriptions from var_desc dataframe to new data frame </span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_suffix =</span> <span class="fu">gsub</span>(<span class="st">"_[0-9]+cat[_f]*"</span>, <span class="st">""</span>, <span class="at">x =</span> variable)</span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(var_desc, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"no_suffix"</span> <span class="ot">=</span> <span class="st">"variable"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># remove "no_suffix" variable</span></span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(no_suffix))</span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>var_desc <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(var_desc, tool_vars) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_row</span>(<span class="at">variable =</span> <span class="st">"timestamp_end"</span>, <span class="at">description =</span> <span class="st">"Form end timestamp"</span>,</span>
+<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">label =</span> <span class="st">"Form start timestamp"</span>, <span class="at">id =</span> <span class="dv">62</span>) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(id) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_row</span>(<span class="at">variable =</span> <span class="st">"ri_clinician_id_name"</span>, <span class="at">description =</span> <span class="st">"Clinician name"</span>,</span>
+<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a>          <span class="at">label =</span> <span class="st">"Clinician name"</span>, <span class="at">id =</span> <span class="dv">28</span>) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(id) <span class="sc">%&gt;%</span></span>
+<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(id))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="merge-link-data-and-convert-to-long-format" class="level1">
 <h1>Merge link data and convert to long format</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge all the link data into one data frame</span></span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>link_hits <span class="ot">&lt;-</span> <span class="fu">list</span>(definitions_link_hits, al_link_hits, ca_link_hits, </span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>                  md_link_hits, tx_link_hits) <span class="sc">%&gt;%</span> purrr<span class="sc">::</span><span class="fu">reduce</span>(left_join, </span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>                                                                <span class="at">by =</span> <span class="st">"date"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert data frame to long form</span></span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">!</span>date, <span class="at">names_to =</span> <span class="st">"link"</span>, <span class="at">values_to =</span> <span class="st">"hits"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> lubridate<span class="sc">::</span><span class="fu">mdy</span>(date)</span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge all the link data into one data frame</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>link_hits <span class="ot">&lt;-</span> <span class="fu">list</span>(definitions_link_hits, al_link_hits, ca_link_hits, </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>                  md_link_hits, tx_link_hits) <span class="sc">%&gt;%</span> purrr<span class="sc">::</span><span class="fu">reduce</span>(left_join, </span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>                                                                <span class="at">by =</span> <span class="st">"date"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert data frame to long form</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">!</span>date, <span class="at">names_to =</span> <span class="st">"link"</span>, <span class="at">values_to =</span> <span class="st">"hits"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> lubridate<span class="sc">::</span><span class="fu">mdy</span>(date)</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="save-data" class="level1">
 <h1>Save data</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create new detect_tool data folder</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>folder_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>)</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">dir.exists</span>(folder_path)) {<span class="fu">dir.create</span>(folder_path)}</span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Save cleaned data</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(tool, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>,</span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"detect_tool_cleaned.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create new detect_tool data folder</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>folder_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>)</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">dir.exists</span>(folder_path)) {<span class="fu">dir.create</span>(folder_path)}</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Save cleaned data</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(tool, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>,</span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"detect_tool_cleaned.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save variable descriptions</span></span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(var_desc, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data_management"</span>, <span class="st">"detect_tool"</span>, </span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"variable_descriptions.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save variable descriptions</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(var_desc, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data_management"</span>, <span class="st">"detect_tool"</span>, </span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"variable_descriptions.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(link_hits, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>,</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"detect_tool_link_hits.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(link_hits, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"detect_tool"</span>,</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"detect_tool_link_hits.RDS"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
