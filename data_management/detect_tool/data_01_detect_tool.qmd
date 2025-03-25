@@ -350,7 +350,7 @@ get_values(tool, cols)
 # Numeric coding for character values in each column of interest
 value_labels <- c(
     "Caregiver not present" = 1,
-    "Other reason" = 98
+    "Other reason {ri_caregiver_oth}" = 98
 )
 
 # NA values
