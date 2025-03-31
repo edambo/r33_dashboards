@@ -26,10 +26,3 @@ format:
     css: assets/custom_style.css # custom formatting for value boxes
     toc: true
 
-
-# To make sure that R, Python, and Julia code is only executed locally, 
-# configure your project to use Quarto’s freeze feature by adding this to your 
-# _quarto.yml. (https://quarto.org/docs/publishing/netlify.html)
-execute:
-  freeze: auto
-

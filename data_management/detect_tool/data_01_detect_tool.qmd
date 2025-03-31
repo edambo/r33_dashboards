@@ -516,6 +516,15 @@ tool <- tool %>%
 ```
 
 
+# Filter out rows for University of Alabama without password verification
+
+```{r}
+tool <- tool %>% 
+  filter(!(calc_institution_7cat == 4 & password_verification == 0))
+```
+
+
+
 # Update variable descriptions dataframe with new variables
 
 ```{r}
